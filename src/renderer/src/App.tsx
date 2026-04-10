@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import Editor from '@monaco-editor/react';
+import { Group, Panel, Separator } from 'react-resizable-panels';
 import TerminalPane from './components/TerminalPane';
 import { useAppStore } from './store/useAppStore';
 import './assets/main.css';
 
-function App(): JSX.Element {
+function App(): ReactElement {
   const { files, activeFileContent, initWorkspace, openFile } = useAppStore();
 
   // Load the workspace when the app starts
@@ -13,48 +14,77 @@ function App(): JSX.Element {
   }, [initWorkspace]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#1e1e1e', color: '#fff' }}>
-      
-      {/* 1. Dynamic Explorer Sidebar */}
-      <div style={{ width: '250px', borderRight: '1px solid #333', display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ padding: '10px', margin: 0, fontSize: '14px', borderBottom: '1px solid #333' }}>EXPLORER</h3>
-        <div style={{ overflowY: 'auto', flex: 1, padding: '5px' }}>
-          {files.map((file) => (
-            <div 
-              key={file.path} 
-              onClick={() => !file.isDirectory && openFile(file.path)}
-              style={{ 
-                padding: '5px 10px', 
-                cursor: file.isDirectory ? 'default' : 'pointer',
-                color: file.isDirectory ? '#aaa' : '#fff',
-                fontSize: '13px'
-              }}
+    <div className="app-root">
+      <Group orientation="horizontal" id="explorer-main" className="app-group app-group--horizontal">
+        <Panel
+          id="explorer"
+          defaultSize="20%"
+          minSize="12%"
+          maxSize="50%"
+          className="app-panel app-panel-explorer"
+          style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+        >
+          <h3 style={{ padding: '10px', margin: 0, fontSize: '14px', borderBottom: '1px solid #333' }}>
+            EXPLORER
+          </h3>
+          <div style={{ overflowY: 'auto', flex: 1, padding: '5px', minHeight: 0 }}>
+            {files.map((file) => (
+              <div
+                key={file.path}
+                onClick={() => !file.isDirectory && openFile(file.path)}
+                style={{
+                  padding: '5px 10px',
+                  cursor: file.isDirectory ? 'default' : 'pointer',
+                  color: file.isDirectory ? '#aaa' : '#fff',
+                  fontSize: '13px',
+                }}
+              >
+                {file.isDirectory ? '📁 ' : '📄 '} {file.name}
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Separator id="sep-explorer-main" className="app-separator app-separator-vertical" />
+
+        <Panel id="main" minSize="35%" className="app-panel app-panel-main">
+          <Group orientation="vertical" id="editor-terminal" className="app-group app-group--vertical">
+            <Panel
+              id="editor"
+              defaultSize="65%"
+              minSize="20%"
+              className="app-panel app-panel-editor"
+              style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}
             >
-              {file.isDirectory ? '📁 ' : '📄 '} {file.name}
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        
-        {/* 2. Dynamic Monaco Editor */}
-        <div style={{ flex: 2 }}>
-          <Editor 
-            height="100%" 
-            defaultLanguage="javascript" 
-            theme="vs-dark" 
-            value={activeFileContent} // <-- Now linked to state!
-            options={{ minimap: { enabled: false }, fontSize: 14 }}
-          />
-        </div>
-        
-        <div style={{ flex: 1, borderTop: '1px solid #333' }}>
-          <TerminalPane />
-        </div>
-      </div>
+              <div className="app-panel-editor-inner">
+                <Editor
+                  height="100%"
+                  defaultLanguage="javascript"
+                  theme="vs-dark"
+                  value={activeFileContent}
+                  options={{ minimap: { enabled: false }, fontSize: 14 }}
+                />
+              </div>
+            </Panel>
+
+            <Separator id="sep-editor-terminal" className="app-separator app-separator-horizontal" />
+
+            <Panel
+              id="terminal"
+              defaultSize="35%"
+              minSize="12%"
+              className="app-panel app-panel-terminal"
+              style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}
+            >
+              <div className="app-panel-terminal-inner">
+                <TerminalPane />
+              </div>
+            </Panel>
+          </Group>
+        </Panel>
+      </Group>
     </div>
-  )
+  );
 }
 
 export default App;

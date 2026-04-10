@@ -170,3 +170,62 @@ code {
   }
 }
 
+/* IDE shell: resizable explorer / editor / terminal */
+.app-root {
+  height: 100vh;
+  width: 100vw;
+  background-color: #1e1e1e;
+  color: #fff;
+  overflow: hidden;
+}
+
+.app-group {
+  height: 100%;
+  width: 100%;
+}
+
+.app-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-panel-explorer {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-panel-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-panel-editor-inner,
+.app-panel-terminal-inner {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app-separator {
+  flex-shrink: 0;
+  background-color: #333;
+  transition: background-color 0.12s ease;
+}
+
+.app-separator:hover {
+  background-color: #007fd4;
+}
+
+.app-separator-vertical {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.app-separator-horizontal {
+  height: 4px;
+  cursor: row-resize;
+}
+
