@@ -22,8 +22,10 @@ export function setupTerminal(webContents: WebContents): void {
   }
 
   const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
+  /** `-NoLogo` skips the copyright / “install latest PowerShell” banner (clean prompt only). */
+  const shellArgs = os.platform() === 'win32' ? ['-NoLogo'] : [];
 
-  const ptyProcess = pty.spawn(shell, [], {
+  const ptyProcess = pty.spawn(shell, shellArgs, {
     name: 'xterm-color',
     cols: 80,
     rows: 30,
