@@ -1,5 +1,7 @@
 import { setupTerminal } from './terminal';
 import { setupFSHandlers } from './fs';
+import { setupWindowControls } from './windowControls';
+import { setupDialogHandlers } from './dialogHandlers';
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -11,6 +13,7 @@ function createWindow(): void {
     width: 900,
     height: 670,
     show: false,
+    frame: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -21,6 +24,8 @@ function createWindow(): void {
 
   setupTerminal(mainWindow.webContents);
   setupFSHandlers();
+  setupDialogHandlers();
+  setupWindowControls(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()

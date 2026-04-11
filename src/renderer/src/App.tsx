@@ -1,7 +1,8 @@
-import { useEffect, type ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { EditorTabsPane } from './components/EditorTabsPane';
 import { FileTreeNode } from './components/FileTreeNode';
+import { TitleBar } from './components/TitleBar';
 import TerminalPane from './components/TerminalPane';
 import { setExplorerMainGroupResizing } from './shell/explorerMainResize';
 import { useAppStore } from './store/useAppStore';
@@ -11,7 +12,11 @@ import './assets/main.css';
 const EXPLORER_WIDTH_PX = 260;
 
 function App(): ReactElement {
-  const { rootEntries, initWorkspace } = useAppStore();
+  const rootEntries = useAppStore((s) => s.rootEntries);
+  const initWorkspace = useAppStore((s) => s.initWorkspace);
+  const setExplorerSelectedPath = useAppStore((s) => s.setExplorerSelectedPath);
+  const setExplorerPaneFocused = useAppStore((s) => s.setExplorerPaneFocused);
+  const explorerTreeScrollRef = useRef<HTMLDivElement>(null);
 
   // Load the workspace when the app starts
   useEffect(() => {
@@ -19,18 +24,20 @@ function App(): ReactElement {
   }, [initWorkspace]);
 
   return (
-    <div className="app-root">
-      <Group
-        orientation="horizontal"
-        id="explorer-main"
-        className="app-group app-group--horizontal"
-        onLayoutChange={() => {
-          setExplorerMainGroupResizing(true);
-        }}
-        onLayoutChanged={() => {
-          setExplorerMainGroupResizing(false);
-        }}
-      >
+    <div className="app-shell">
+      <TitleBar />
+      <div className="app-root">
+        <Group
+          orientation="horizontal"
+          id="explorer-main"
+          className="app-group app-group--horizontal"
+          onLayoutChange={() => {
+            setExplorerMainGroupResizing(true);
+          }}
+          onLayoutChanged={() => {
+            setExplorerMainGroupResizing(false);
+          }}
+        >
         <Panel
           id="explorer"
           defaultSize={EXPLORER_WIDTH_PX}
@@ -40,23 +47,41 @@ function App(): ReactElement {
           className="app-panel app-panel-explorer"
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
         >
-          <h3 style={{ padding: '10px', margin: 0, fontSize: '14px', borderBottom: '1px solid #333' }}>
-            EXPLORER
-          </h3>
           <div
-            className="app-overlay-scroll"
-            style={{
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              flex: 1,
-              padding: '5px',
-              minHeight: 0,
-              minWidth: 0,
+            className="explorer-focus-scope"
+            style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+            onFocusCapture={() => setExplorerPaneFocused(true)}
+            onBlurCapture={(e) => {
+              const next = e.relatedTarget as Node | null;
+              if (next && e.currentTarget.contains(next)) return;
+              setExplorerPaneFocused(false);
             }}
           >
-            {rootEntries.map((node) => (
-              <FileTreeNode key={node.path} node={node} depth={0} />
-            ))}
+            <h3 style={{ padding: '10px', margin: 0, fontSize: '14px', borderBottom: '1px solid #333' }}>
+              EXPLORER
+            </h3>
+            <div
+              ref={explorerTreeScrollRef}
+              tabIndex={-1}
+              className="app-overlay-scroll explorer-tree-scroll"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                flex: 1,
+                padding: '5px',
+                minHeight: 0,
+                minWidth: 0,
+              }}
+              onMouseDown={(e) => {
+                if ((e.target as HTMLElement).closest('[data-explorer-row]')) return;
+                setExplorerSelectedPath(null);
+                explorerTreeScrollRef.current?.focus({ preventScroll: true });
+              }}
+            >
+              {rootEntries.map((node) => (
+                <FileTreeNode key={node.path} node={node} depth={0} />
+              ))}
+            </div>
           </div>
         </Panel>
 
@@ -97,6 +122,7 @@ function App(): ReactElement {
           </Group>
         </Panel>
       </Group>
+      </div>
     </div>
   );
 }

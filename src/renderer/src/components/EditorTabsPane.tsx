@@ -52,6 +52,18 @@ export function EditorTabsPane(): ReactElement {
     prevTabsForDispose.current = tabs;
   }, [tabs]);
 
+  const registerEditorValueGetter = useAppStore((s) => s.registerEditorValueGetter);
+  useEffect(() => {
+    const getter = (): string | null => {
+      const ed = editorRef.current;
+      const m = ed?.getModel();
+      if (!m) return null;
+      return m.getValue();
+    };
+    registerEditorValueGetter(getter);
+    return () => registerEditorValueGetter(null);
+  }, [registerEditorValueGetter]);
+
   const applyActiveModel = () => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;

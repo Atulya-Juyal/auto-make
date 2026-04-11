@@ -19,6 +19,28 @@ function fileTitle(filePath: string): string {
   return parts[parts.length - 1] || filePath;
 }
 
+/** Normalize for comparison (slashes, trailing sep, case on Windows). */
+function normPath(p: string): string {
+  return p
+    .trim()
+    .replace(/[/\\]+/g, '\\')
+    .replace(/\\+$/g, '')
+    .toLowerCase();
+}
+
+function samePath(a: string, b: string): boolean {
+  return normPath(a) === normPath(b);
+}
+
+/** True if `p` is the workspace root or a path inside it. */
+function pathUnderWorkspace(ws: string, p: string): boolean {
+  const r = normPath(ws);
+  const c = normPath(p);
+  if (!r || !c) return false;
+  if (c === r) return true;
+  return c.startsWith(r + '\\');
+}
+
 interface AppState {
   workspacePath: string;
   rootEntries: FileNode[];
@@ -28,6 +50,17 @@ interface AppState {
 
   tabs: EditorTab[];
   activeTabId: string | null;
+
+  /** Last clicked file/folder in the tree; null after clicking empty explorer area. */
+  explorerSelectedPath: string | null;
+  /** True while focus is inside the explorer panel (VS Code–style active vs inactive selection). */
+  explorerPaneFocused: boolean;
+  setExplorerSelectedPath: (path: string | null) => void;
+  setExplorerPaneFocused: (focused: boolean) => void;
+
+  /** Monaco accessor for Save; registered from EditorTabsPane. */
+  _editorGetValue: (() => string | null) | null;
+  registerEditorValueGetter: (fn: (() => string | null) | null) => void;
 
   initWorkspace: () => Promise<void>;
   toggleFolder: (folderPath: string) => Promise<void>;
@@ -39,6 +72,18 @@ interface AppState {
   reorderTab: (draggedId: string, dropBeforeIndex: number) => void;
   /** After Monaco model is created from initialContent. */
   consumeTabBootstrap: (filePath: string) => void;
+
+  resolveNewItemParentDir: () => Promise<string>;
+  revealPathInTree: (targetDir: string) => Promise<void>;
+  createNewFile: (name: string) => Promise<void>;
+  createNewFolder: (name: string) => Promise<void>;
+  saveActiveTab: () => Promise<void>;
+  openFileFromDialog: () => Promise<void>;
+  openFolderFromDialog: () => Promise<void>;
+  /** Force-refresh a directory listing (fixes new file/folder not showing when parent cache is stale). */
+  refreshDirInTree: (dirPath: string) => Promise<void>;
+  /** Close every editor tab (e.g. when switching workspace folder). */
+  closeAllTabs: () => void;
 }
 
 function removeFromSet(set: Set<string>, value: string): Set<string> {
@@ -55,9 +100,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadingPaths: new Set(),
   tabs: [],
   activeTabId: null,
+  explorerSelectedPath: null,
+  explorerPaneFocused: false,
+  _editorGetValue: null,
+
+  setExplorerSelectedPath: (path) => set({ explorerSelectedPath: path }),
+  setExplorerPaneFocused: (focused) => set({ explorerPaneFocused: focused }),
+  registerEditorValueGetter: (fn) => set({ _editorGetValue: fn }),
 
   initWorkspace: async () => {
-    const path = await window.api.getWorkspace();
+    const path = await window.api.normalizePath(await window.api.getWorkspace());
     const fileList = await window.api.readDir(path);
     set({
       workspacePath: path,
@@ -65,6 +117,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       expandedPaths: new Set(),
       dirChildren: {},
       loadingPaths: new Set(),
+      explorerSelectedPath: null,
+      explorerPaneFocused: false,
     });
   },
 
@@ -165,5 +219,186 @@ export const useAppStore = create<AppState>((set, get) => ({
         t.path === filePath ? { ...t, initialContent: undefined } : t,
       ),
     }));
+  },
+
+  resolveNewItemParentDir: async () => {
+    const ws = await window.api.normalizePath(await window.api.getWorkspace());
+    if (!ws) {
+      window.alert('Workspace is not ready yet. Wait for the folder tree to load.');
+      return '';
+    }
+    const { explorerSelectedPath } = get();
+    if (!explorerSelectedPath) return ws;
+
+    const sel = await window.api.normalizePath(explorerSelectedPath);
+    if (!pathUnderWorkspace(ws, sel)) return ws;
+
+    const stat = await window.api.statEntry(sel);
+    if (stat.exists && stat.isDirectory) return sel;
+    if (stat.exists && !stat.isDirectory) {
+      return await window.api.normalizePath(await window.api.pathDirname(sel));
+    }
+
+    let cur = sel;
+    for (let i = 0; i < 256; i++) {
+      const parent = await window.api.pathDirname(cur);
+      const parentNorm = await window.api.normalizePath(parent);
+      if (parentNorm === cur) break;
+      if (!pathUnderWorkspace(ws, parentNorm)) break;
+      const st = await window.api.statEntry(parentNorm);
+      if (st.exists && st.isDirectory) return parentNorm;
+      cur = parentNorm;
+    }
+    return ws;
+  },
+
+  refreshDirInTree: async (dirPath: string) => {
+    if (!dirPath) return;
+    const mainWs = await window.api.normalizePath(await window.api.getWorkspace());
+    if (!mainWs) return;
+    const dirNorm = await window.api.normalizePath(dirPath);
+    try {
+      const list = await window.api.readDir(dirNorm);
+      if (samePath(dirNorm, mainWs)) {
+        set({ rootEntries: list, workspacePath: mainWs });
+      } else {
+        set((s) => ({ dirChildren: { ...s.dirChildren, [dirNorm]: list } }));
+      }
+    } catch {
+      /* ignore */
+    }
+  },
+
+  closeAllTabs: () => {
+    set({ tabs: [], activeTabId: null });
+  },
+
+  revealPathInTree: async (targetDir: string) => {
+    if (!targetDir) return;
+
+    const wsNorm = await window.api.normalizePath(await window.api.getWorkspace());
+    if (!wsNorm) return;
+    let cur = await window.api.normalizePath(targetDir);
+    if (!pathUnderWorkspace(wsNorm, cur)) return;
+
+    const up: string[] = [];
+    for (let i = 0; i < 256; i++) {
+      up.push(cur);
+      if (samePath(cur, wsNorm)) break;
+      const parent = await window.api.pathDirname(cur);
+      const next = await window.api.normalizePath(parent);
+      if (next === cur) return;
+      if (!pathUnderWorkspace(wsNorm, next)) return;
+      cur = next;
+    }
+    if (up.length === 0 || !samePath(up[up.length - 1], wsNorm)) return;
+
+    const chain = up.slice().reverse();
+
+    const expanded = new Set(get().expandedPaths);
+    for (const d of chain) {
+      expanded.add(d);
+    }
+    set({ expandedPaths: expanded });
+
+    for (const d of chain) {
+      if (get().dirChildren[d] === undefined) {
+        try {
+          const children = await window.api.readDir(d);
+          set((s) => ({ dirChildren: { ...s.dirChildren, [d]: children } }));
+        } catch {
+          set((s) => ({ dirChildren: { ...s.dirChildren, [d]: [] } }));
+        }
+      }
+    }
+
+    const leaf = chain[chain.length - 1];
+    const list = await window.api.readDir(leaf);
+    if (samePath(leaf, wsNorm)) {
+      set({ rootEntries: list, workspacePath: wsNorm });
+    } else {
+      set((s) => ({ dirChildren: { ...s.dirChildren, [leaf]: list } }));
+    }
+  },
+
+  createNewFile: async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || /[/\\?*"<>|]/.test(trimmed)) {
+      window.alert('Invalid file name.');
+      return;
+    }
+    const parent = await get().resolveNewItemParentDir();
+    if (!parent) return;
+    const full = await window.api.normalizePath(await window.api.pathJoin(parent, trimmed));
+    try {
+      await window.api.createEmptyFile(full);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      window.alert(`Could not create the file: ${msg}`);
+      return;
+    }
+    await get().revealPathInTree(parent);
+    await get().refreshDirInTree(parent);
+    await get().openFileInTab(full);
+  },
+
+  createNewFolder: async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || /[/\\?*"<>|]/.test(trimmed)) {
+      window.alert('Invalid folder name.');
+      return;
+    }
+    const parentDir = await get().resolveNewItemParentDir();
+    if (!parentDir) return;
+    const full = await window.api.normalizePath(await window.api.pathJoin(parentDir, trimmed));
+    try {
+      await window.api.mkdir(full);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      window.alert(`Could not create the folder: ${msg}`);
+      return;
+    }
+    await get().revealPathInTree(parentDir);
+    await get().refreshDirInTree(parentDir);
+    const expanded = new Set(get().expandedPaths);
+    expanded.add(parentDir);
+    set({ expandedPaths: expanded, explorerSelectedPath: full });
+  },
+
+  saveActiveTab: async () => {
+    const { activeTabId, tabs, _editorGetValue } = get();
+    if (!activeTabId) {
+      window.alert('No file is open.');
+      return;
+    }
+    const tab = tabs.find((t) => t.id === activeTabId);
+    if (!tab) return;
+    if (!_editorGetValue) {
+      window.alert('Editor is not ready.');
+      return;
+    }
+    const text = _editorGetValue();
+    if (text === null) {
+      window.alert('Nothing to save.');
+      return;
+    }
+    await window.api.writeFile(tab.path, text);
+  },
+
+  openFileFromDialog: async () => {
+    const picked = await window.api.openFileDialog();
+    if (!picked) return;
+    const dir = await window.api.pathDirname(picked);
+    await window.api.setWorkspace(dir);
+    await get().initWorkspace();
+    await get().openFileInTab(picked);
+  },
+
+  openFolderFromDialog: async () => {
+    const picked = await window.api.openFolderDialog();
+    if (!picked) return;
+    get().closeAllTabs();
+    await window.api.setWorkspace(picked);
+    await get().initWorkspace();
   },
 }));

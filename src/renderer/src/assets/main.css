@@ -1,12 +1,9 @@
 @import './base.css';
 
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0;
   overflow: hidden;
-  background-image: url('./wavy-lines.svg');
-  background-size: cover;
+  background-color: #1e1e1e;
   user-select: none;
 }
 
@@ -27,11 +24,11 @@ code {
 }
 
 #root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  margin-bottom: 80px;
 }
 
 .logo {
@@ -170,13 +167,251 @@ code {
   }
 }
 
-/* IDE shell: resizable explorer / editor / terminal */
-.app-root {
+/* IDE shell: custom title bar + resizable explorer / editor / terminal */
+.app-shell {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+.app-root {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   background-color: #1e1e1e;
   color: #fff;
   overflow: hidden;
+}
+
+/* New file / folder name (replaces window.prompt — not supported in Electron renderer) */
+.ide-name-prompt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-app-region: no-drag;
+}
+
+.ide-name-prompt-dialog {
+  min-width: 320px;
+  max-width: 90vw;
+  padding: 16px 18px;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+}
+
+.ide-name-prompt-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8e8e8;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.ide-name-prompt-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #e8e8e8;
+  background: #3c3c3c;
+  border: 1px solid #3c3c3c;
+  border-radius: 3px;
+  outline: none;
+}
+
+.ide-name-prompt-input:focus {
+  border-color: #007fd4;
+}
+
+.ide-name-prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ide-name-prompt-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+}
+
+.ide-name-prompt-btn-secondary {
+  background: transparent;
+  color: #cccccc;
+}
+
+.ide-name-prompt-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ide-name-prompt-btn-primary {
+  background: #0e639c;
+  color: #fff;
+}
+
+.ide-name-prompt-btn-primary:hover {
+  background: #1177bb;
+}
+
+/* Frameless window: title bar + drag region */
+.title-bar {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  height: 32px;
+  background: linear-gradient(180deg, #3c3c3c 0%, #323233 100%);
+  border-bottom: 1px solid #1e1e1e;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.title-bar-leading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 10px;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-logo {
+  flex-shrink: 0;
+}
+
+.title-bar-app-name {
+  font-size: 12px;
+  color: #e8e8e8;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.title-bar-drag {
+  flex: 1;
+  min-width: 24px;
+}
+
+.title-bar-menu-wrap {
+  position: relative;
+  margin-left: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-menu-trigger {
+  height: 22px;
+  padding: 0 10px;
+  margin: 5px 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: #e0e0e0;
+  font-size: 12px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.title-bar-menu-trigger:hover,
+.title-bar-menu-trigger-open {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.title-bar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 2px;
+  min-width: 220px;
+  padding: 4px 0;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 3px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  z-index: 10000;
+}
+
+.title-bar-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #e8e8e8;
+  font-size: 12px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.title-bar-menu-item:hover {
+  background: #094771;
+  color: #fff;
+}
+
+.title-bar-menu-sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: #454545;
+}
+
+.title-bar-kbd {
+  font-size: 11px;
+  color: #9d9d9d;
+  font-family: inherit;
+  font-weight: normal;
+}
+
+.title-bar-menu-item:hover .title-bar-kbd {
+  color: #c0c0c0;
+}
+
+.title-bar-controls {
+  display: flex;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-win-btn {
+  width: 46px;
+  border: none;
+  background: transparent;
+  color: #e8e8e8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.title-bar-win-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title-bar-win-min span {
+  display: block;
+  width: 10px;
+  height: 1px;
+  background: currentColor;
+}
+
+.title-bar-win-close:hover {
+  background: #e81123;
+  color: #fff;
 }
 
 .app-group {
@@ -405,9 +640,66 @@ code {
   align-self: stretch;
 }
 
+/* Explorer tree: selection (VS Code–style active / inactive) */
+.explorer-focus-scope {
+  outline: none;
+}
+
+.explorer-tree-scroll {
+  outline: none;
+}
+
+.explorer-tree-scroll:focus {
+  outline: none;
+}
+
+.explorer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 3px;
+  color: #858585;
+}
+
+.explorer-row--file {
+  color: #cccccc;
+}
+
+/* Intensity 1: hover only (unselected) — lighter than inactive (2) and active (3) selection */
+.explorer-row:not(.explorer-row--selected-active):not(.explorer-row--selected-inactive):hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Intensity 3: selected while explorer has focus */
+.explorer-row--selected-active {
+  background-color: #37373d;
+  color: #ffffff;
+}
+
+/* Intensity 2: selected while focus is elsewhere */
+.explorer-row--selected-inactive {
+  background-color: #2a2d2e;
+  color: #ffffff;
+}
+
+.explorer-row:focus {
+  outline: none;
+}
+
+.explorer-row:focus-visible {
+  outline: 1px solid #007fd4;
+  outline-offset: -1px;
+}
+
 /* Explorer tree: chevrons + file-type icons */
 .explorer-chevron {
-  color: #c5c5c5;
+  color: currentColor;
 }
 
 .explorer-file-icon {

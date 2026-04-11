@@ -25,6 +25,9 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
   const expandedPaths = useAppStore((s) => s.expandedPaths);
   const dirChildren = useAppStore((s) => s.dirChildren);
   const loadingPaths = useAppStore((s) => s.loadingPaths);
+  const explorerSelectedPath = useAppStore((s) => s.explorerSelectedPath);
+  const explorerPaneFocused = useAppStore((s) => s.explorerPaneFocused);
+  const setExplorerSelectedPath = useAppStore((s) => s.setExplorerSelectedPath);
   const toggleFolder = useAppStore((s) => s.toggleFolder);
   const openFileInTab = useAppStore((s) => s.openFileInTab);
 
@@ -32,17 +35,23 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
   const isLoading = loadingPaths.has(node.path);
   const children = dirChildren[node.path];
   const paddingLeft = 10 + depth * 12;
+  const selected = explorerSelectedPath === node.path;
+  const selectedMod = selected
+    ? explorerPaneFocused
+      ? 'explorer-row--selected-active'
+      : 'explorer-row--selected-inactive'
+    : '';
 
-  const rowBase = {
-    display: 'flex' as const,
-    alignItems: 'center' as const,
-    gap: 6,
-    minWidth: 0,
-    width: '100%',
-    boxSizing: 'border-box' as const,
-    padding: '4px 10px',
+  const rowClass = [
+    'explorer-row',
+    node.isDirectory ? 'explorer-row--folder' : 'explorer-row--file',
+    selectedMod,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const rowStyle = {
     paddingLeft,
-    fontSize: '13px' as const,
   };
 
   const labelTruncate = {
@@ -58,17 +67,17 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
       <div
         role="button"
         tabIndex={0}
+        className={rowClass}
+        style={rowStyle}
+        data-explorer-row
+        data-path={node.path}
+        onFocus={() => setExplorerSelectedPath(node.path)}
         onClick={() => void openFileInTab(node.path)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             void openFileInTab(node.path);
           }
-        }}
-        style={{
-          ...rowBase,
-          cursor: 'pointer',
-          color: '#fff',
         }}
       >
         <span style={leadCol} aria-hidden>
@@ -86,8 +95,12 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
       <div
         role="button"
         tabIndex={0}
-        onClick={(e) => {
-          e.stopPropagation();
+        className={rowClass}
+        style={rowStyle}
+        data-explorer-row
+        data-path={node.path}
+        onFocus={() => setExplorerSelectedPath(node.path)}
+        onClick={() => {
           void toggleFolder(node.path);
         }}
         onKeyDown={(e) => {
@@ -95,11 +108,6 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
             e.preventDefault();
             void toggleFolder(node.path);
           }
-        }}
-        style={{
-          ...rowBase,
-          cursor: 'pointer',
-          color: '#aaa',
         }}
       >
         <span style={leadCol} aria-hidden>
@@ -114,7 +122,13 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
           {isLoading && children === undefined ? (
             <div
               style={{
-                ...rowBase,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                minWidth: 0,
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '4px 10px',
                 paddingLeft: paddingLeft + 6,
                 color: '#888',
                 fontSize: '12px',
