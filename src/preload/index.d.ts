@@ -6,7 +6,7 @@ declare global {
     electron: ElectronAPI
     api: {
       onTerminalData: (data: string) => void
-      receiveTerminalData: (callback: (data: string) => void) => void
+      receiveTerminalData: (callback: (data: string) => void) => () => void
       resizeTerminal: (cols: number, rows: number) => void
       // ADD THESE THREE LINES:
       getWorkspace: () => Promise<string>

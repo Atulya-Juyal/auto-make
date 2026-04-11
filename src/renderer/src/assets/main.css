@@ -229,3 +229,88 @@ code {
   cursor: row-resize;
 }
 
+/* Scrollbars (Monaco defaults: 14px vertical, 12px horizontal) — shared width, radius, colors, motion */
+:root {
+  --app-scrollbar-show-duration: 0.09s;
+  --app-scrollbar-show-ease: ease-in;
+  --app-scrollbar-hide-duration: 0.16s;
+  --app-scrollbar-hide-ease: ease-out;
+  --app-scrollbar-thumb: rgba(160, 160, 160, 0.42);
+  --app-scrollbar-thumb-hover: rgba(190, 190, 190, 0.55);
+  --app-scrollbar-thumb-active: rgba(200, 200, 200, 0.65);
+  --app-scrollbar-size-v: 14px;
+  --app-scrollbar-size-h: 12px;
+  --app-scrollbar-radius: 4px;
+}
+
+/* ----- Native scrollbars (Explorer, xterm) — match Monaco width / radius / animation ----- */
+.app-overlay-scroll,
+.xterm .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.app-overlay-scroll::-webkit-scrollbar,
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: var(--app-scrollbar-size-v);
+  height: var(--app-scrollbar-size-h);
+}
+
+.app-overlay-scroll::-webkit-scrollbar-track,
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-overlay-scroll::-webkit-scrollbar-thumb,
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: var(--app-scrollbar-radius);
+  transition: background-color var(--app-scrollbar-hide-duration) var(--app-scrollbar-hide-ease);
+}
+
+.app-panel-explorer:hover .app-overlay-scroll::-webkit-scrollbar-thumb,
+.app-panel-terminal:hover .xterm-viewport::-webkit-scrollbar-thumb {
+  background-color: var(--app-scrollbar-thumb);
+  transition: background-color var(--app-scrollbar-show-duration) var(--app-scrollbar-show-ease);
+}
+
+.app-panel-explorer:hover .app-overlay-scroll::-webkit-scrollbar-thumb:hover,
+.app-panel-terminal:hover .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: var(--app-scrollbar-thumb-hover);
+}
+
+.app-panel-explorer:hover .app-overlay-scroll::-webkit-scrollbar-thumb:active,
+.app-panel-terminal:hover .xterm-viewport::-webkit-scrollbar-thumb:active {
+  background-color: var(--app-scrollbar-thumb-active);
+}
+
+/* Firefox: same thumb color as editor when panel hovered */
+.app-panel-explorer:hover .app-overlay-scroll,
+.app-panel-terminal:hover .xterm .xterm-viewport {
+  scrollbar-color: var(--app-scrollbar-thumb) transparent;
+}
+
+/* ----- Monaco editor scrollbars (custom DOM) — same tokens as native ----- */
+.app-panel-editor .monaco-scrollable-element > .scrollbar {
+  background: transparent !important;
+}
+
+.app-panel-editor .monaco-scrollable-element > .scrollbar > .slider {
+  border-radius: var(--app-scrollbar-radius) !important;
+  background: transparent !important;
+  transition: background-color var(--app-scrollbar-hide-duration) var(--app-scrollbar-hide-ease) !important;
+}
+
+.app-panel-editor:hover .monaco-scrollable-element > .scrollbar > .slider {
+  background: var(--app-scrollbar-thumb) !important;
+  transition: background-color var(--app-scrollbar-show-duration) var(--app-scrollbar-show-ease) !important;
+}
+
+.app-panel-editor:hover .monaco-scrollable-element > .scrollbar > .slider:hover {
+  background: var(--app-scrollbar-thumb-hover) !important;
+}
+
+.app-panel-editor:hover .monaco-scrollable-element > .scrollbar > .slider.active {
+  background: var(--app-scrollbar-thumb-active) !important;
+}
+

@@ -44,6 +44,7 @@ function App(): ReactElement {
             EXPLORER
           </h3>
           <div
+            className="app-overlay-scroll"
             style={{
               overflowY: 'auto',
               overflowX: 'hidden',
@@ -85,6 +86,13 @@ function App(): ReactElement {
                     minimap: { enabled: false },
                     fontSize: 14,
                     automaticLayout: true,
+                    scrollbar: {
+                      vertical: 'visible',
+                      horizontal: 'visible',
+                      useShadows: false,
+                      verticalScrollbarSize: 14,
+                      horizontalScrollbarSize: 12,
+                    },
                   }}
                 />
               </div>

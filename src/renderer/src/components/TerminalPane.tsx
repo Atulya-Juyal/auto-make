@@ -14,7 +14,10 @@ export default function TerminalPane() {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!terminalRef.current) return;
+    const container = terminalRef.current;
+    if (!container) return;
+
+    container.replaceChildren();
 
     const term = new Terminal({
       theme: { background: '#1e1e1e' },
@@ -25,7 +28,7 @@ export default function TerminalPane() {
 
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
-    term.open(terminalRef.current);
+    term.open(container);
 
     let lastCols = -1;
     let lastRows = -1;
@@ -99,7 +102,7 @@ export default function TerminalPane() {
       window.api.onTerminalData(data);
     });
 
-    window.api.receiveTerminalData((data) => {
+    const unsubscribeTerminalData = window.api.receiveTerminalData((data) => {
       term.write(data);
     });
 
@@ -109,14 +112,16 @@ export default function TerminalPane() {
       }
       scheduleFit();
     });
-    resizeObserver.observe(terminalRef.current);
+    resizeObserver.observe(container);
 
     return () => {
+      unsubscribeTerminalData();
       window.removeEventListener(EXPLORER_RESIZE_END, onExplorerMainResizeEnd);
       window.clearTimeout(trailTimeout);
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
       term.dispose();
+      container.replaceChildren();
     };
   }, []);
 
