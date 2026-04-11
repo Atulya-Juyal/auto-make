@@ -1,8 +1,9 @@
-import { useEffect, useRef, type ReactElement } from 'react';
-import { Group, Panel, Separator } from 'react-resizable-panels';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels';
 import { EditorTabsPane } from './components/EditorTabsPane';
 import { FileTreeNode } from './components/FileTreeNode';
 import { TitleBar } from './components/TitleBar';
+import { ExplorerChevronDown, ExplorerChevronUp } from './components/explorer/ExplorerIcons';
 import TerminalPane from './components/TerminalPane';
 import { setExplorerMainGroupResizing } from './shell/explorerMainResize';
 import { useAppStore } from './store/useAppStore';
@@ -10,6 +11,9 @@ import './assets/main.css';
 
 /** Sidebar width in CSS pixels; stays constant when the window is resized (not percentage-based). */
 const EXPLORER_WIDTH_PX = 260;
+const EXPLORER_COLLAPSED_PX = 38;
+/** Matches `.terminal-panel-header` min-height + border (collapsed = header row only). */
+const TERMINAL_COLLAPSED_PX = 38;
 
 function App(): ReactElement {
   const rootEntries = useAppStore((s) => s.rootEntries);
@@ -17,6 +21,10 @@ function App(): ReactElement {
   const setExplorerSelectedPath = useAppStore((s) => s.setExplorerSelectedPath);
   const setExplorerPaneFocused = useAppStore((s) => s.setExplorerPaneFocused);
   const explorerTreeScrollRef = useRef<HTMLDivElement>(null);
+  const explorerPanelRef = usePanelRef();
+  const terminalPanelRef = usePanelRef();
+  const [explorerCollapsed, setExplorerCollapsed] = useState(false);
+  const [terminalCollapsed, setTerminalCollapsed] = useState(false);
 
   // Load the workspace when the app starts
   useEffect(() => {
@@ -46,10 +54,16 @@ function App(): ReactElement {
           groupResizeBehavior="preserve-pixel-size"
           className="app-panel app-panel-explorer"
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+          collapsible
+          collapsedSize={EXPLORER_COLLAPSED_PX}
+          panelRef={explorerPanelRef}
+          onResize={(size) => {
+            setExplorerCollapsed(size.inPixels <= EXPLORER_COLLAPSED_PX + 2);
+          }}
         >
           <div
             className="explorer-focus-scope"
-            style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0 }}
             onFocusCapture={() => setExplorerPaneFocused(true)}
             onBlurCapture={(e) => {
               const next = e.relatedTarget as Node | null;
@@ -57,31 +71,49 @@ function App(): ReactElement {
               setExplorerPaneFocused(false);
             }}
           >
-            <h3 style={{ padding: '10px', margin: 0, fontSize: '14px', borderBottom: '1px solid #333' }}>
-              EXPLORER
-            </h3>
             <div
-              ref={explorerTreeScrollRef}
-              tabIndex={-1}
-              className="app-overlay-scroll explorer-tree-scroll"
-              style={{
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                flex: 1,
-                padding: '5px',
-                minHeight: 0,
-                minWidth: 0,
-              }}
-              onMouseDown={(e) => {
-                if ((e.target as HTMLElement).closest('[data-explorer-row]')) return;
-                setExplorerSelectedPath(null);
-                explorerTreeScrollRef.current?.focus({ preventScroll: true });
-              }}
+              className={`explorer-panel-header${explorerCollapsed ? ' explorer-panel-header--collapsed' : ''}`}
             >
-              {rootEntries.map((node) => (
-                <FileTreeNode key={node.path} node={node} depth={0} />
-              ))}
+              {!explorerCollapsed ? <span className="explorer-panel-title">EXPLORER</span> : null}
+              <button
+                type="button"
+                className="explorer-panel-toggle"
+                aria-label={explorerCollapsed ? 'Expand explorer' : 'Collapse explorer'}
+                title={explorerCollapsed ? 'Expand explorer' : 'Collapse explorer'}
+                onClick={() => {
+                  const p = explorerPanelRef.current;
+                  if (!p) return;
+                  if (p.isCollapsed()) p.expand();
+                  else p.collapse();
+                }}
+              >
+                {explorerCollapsed ? '›' : '‹'}
+              </button>
             </div>
+            {!explorerCollapsed ? (
+              <div
+                ref={explorerTreeScrollRef}
+                tabIndex={-1}
+                className="app-overlay-scroll explorer-tree-scroll"
+                style={{
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  flex: 1,
+                  padding: '5px',
+                  minHeight: 0,
+                  minWidth: 0,
+                }}
+                onMouseDown={(e) => {
+                  if ((e.target as HTMLElement).closest('[data-explorer-row]')) return;
+                  setExplorerSelectedPath(null);
+                  explorerTreeScrollRef.current?.focus({ preventScroll: true });
+                }}
+              >
+                {rootEntries.map((node) => (
+                  <FileTreeNode key={node.path} node={node} depth={0} />
+                ))}
+              </div>
+            ) : null}
           </div>
         </Panel>
 
@@ -114,10 +146,37 @@ function App(): ReactElement {
               minSize="12%"
               className="app-panel app-panel-terminal"
               style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}
+              collapsible
+              collapsedSize={TERMINAL_COLLAPSED_PX}
+              panelRef={terminalPanelRef}
+              onResize={(size) => {
+                setTerminalCollapsed(size.inPixels <= TERMINAL_COLLAPSED_PX + 2);
+              }}
             >
-              <div className="app-panel-terminal-inner">
-                <TerminalPane />
+              <div className="terminal-panel-header">
+                <span className="terminal-panel-title">TERMINAL</span>
+                <button
+                  type="button"
+                  className="terminal-panel-toggle"
+                  aria-label={terminalCollapsed ? 'Expand terminal' : 'Collapse terminal'}
+                  title={terminalCollapsed ? 'Expand terminal' : 'Collapse terminal'}
+                  onClick={() => {
+                    const p = terminalPanelRef.current;
+                    if (!p) return;
+                    if (p.isCollapsed()) p.expand();
+                    else p.collapse();
+                  }}
+                >
+                  <span className="terminal-panel-toggle-icon" aria-hidden>
+                    {terminalCollapsed ? <ExplorerChevronUp /> : <ExplorerChevronDown />}
+                  </span>
+                </button>
               </div>
+              {!terminalCollapsed ? (
+                <div className="app-panel-terminal-inner">
+                  <TerminalPane />
+                </div>
+              ) : null}
             </Panel>
           </Group>
         </Panel>

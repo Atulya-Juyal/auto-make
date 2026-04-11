@@ -21,16 +21,25 @@ export function ExplorerChevronRight(): ReactElement {
   );
 }
 
+const CHEVRON_DOWN_D =
+  'M4.22 6.22a.75.75 0 011.06 0L8 8.94l2.72-2.72a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L4.22 7.28a.75.75 0 010-1.06z';
+
 /** Expanded folder — chevron down */
 export function ExplorerChevronDown(): ReactElement {
   return (
     <svg {...svgProps} className="explorer-chevron">
-      <path
-        fill="currentColor"
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M4.22 6.22a.75.75 0 011.06 0L8 8.94l2.72-2.72a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L4.22 7.28a.75.75 0 010-1.06z"
-      />
+      <path fill="currentColor" fillRule="evenodd" clipRule="evenodd" d={CHEVRON_DOWN_D} />
+    </svg>
+  );
+}
+
+/** Same glyph as folder chevron down, rotated — for terminal expand (point up). */
+export function ExplorerChevronUp(): ReactElement {
+  return (
+    <svg {...svgProps} className="explorer-chevron">
+      <g transform="rotate(180 8 8)">
+        <path fill="currentColor" fillRule="evenodd" clipRule="evenodd" d={CHEVRON_DOWN_D} />
+      </g>
     </svg>
   );
 }
