@@ -12,7 +12,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
   const dirChildren = useAppStore((s) => s.dirChildren);
   const loadingPaths = useAppStore((s) => s.loadingPaths);
   const toggleFolder = useAppStore((s) => s.toggleFolder);
-  const openFile = useAppStore((s) => s.openFile);
+  const openFileInTab = useAppStore((s) => s.openFileInTab);
 
   const isExpanded = expandedPaths.has(node.path);
   const isLoading = loadingPaths.has(node.path);
@@ -46,11 +46,11 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
       <div
         role="button"
         tabIndex={0}
-        onClick={() => void openFile(node.path)}
+        onClick={() => void openFileInTab(node.path)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            void openFile(node.path);
+            void openFileInTab(node.path);
           }
         }}
         style={{

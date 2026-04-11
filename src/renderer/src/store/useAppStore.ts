@@ -6,23 +6,39 @@ export interface FileNode {
   path: string;
 }
 
+export interface EditorTab {
+  id: string;
+  path: string;
+  title: string;
+  /** Filled when the tab is opened; cleared after the Monaco model is created. */
+  initialContent?: string;
+}
+
+function fileTitle(filePath: string): string {
+  const parts = filePath.split(/[/\\]/);
+  return parts[parts.length - 1] || filePath;
+}
+
 interface AppState {
   workspacePath: string;
-  /** Top-level entries in the workspace root (from initial readDir). */
   rootEntries: FileNode[];
-  /** Which folder paths are expanded in the tree. */
   expandedPaths: Set<string>;
-  /** Cached directory listings: folder path → children (loaded lazily). */
   dirChildren: Record<string, FileNode[]>;
-  /** Folders currently loading via readDir. */
   loadingPaths: Set<string>;
 
-  activeFilePath: string | null;
-  activeFileContent: string;
+  tabs: EditorTab[];
+  activeTabId: string | null;
 
   initWorkspace: () => Promise<void>;
   toggleFolder: (folderPath: string) => Promise<void>;
-  openFile: (filePath: string) => Promise<void>;
+  /** Open file in a new tab, or focus existing tab for that path. */
+  openFileInTab: (filePath: string) => Promise<void>;
+  setActiveTab: (tabId: string) => void;
+  closeTab: (tabId: string) => void;
+  /** Move tab so it sits before `dropBeforeIndex` (0..length; length = end). */
+  reorderTab: (draggedId: string, dropBeforeIndex: number) => void;
+  /** After Monaco model is created from initialContent. */
+  consumeTabBootstrap: (filePath: string) => void;
 }
 
 function removeFromSet(set: Set<string>, value: string): Set<string> {
@@ -37,8 +53,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   expandedPaths: new Set(),
   dirChildren: {},
   loadingPaths: new Set(),
-  activeFilePath: null,
-  activeFileContent: '// Select a file from the explorer...',
+  tabs: [],
+  activeTabId: null,
 
   initWorkspace: async () => {
     const path = await window.api.getWorkspace();
@@ -85,8 +101,69 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  openFile: async (filePath: string) => {
+  openFileInTab: async (filePath: string) => {
+    const { tabs } = get();
+    const existing = tabs.find((t) => t.path === filePath);
+    if (existing) {
+      set({ activeTabId: existing.id });
+      return;
+    }
     const content = await window.api.readFile(filePath);
-    set({ activeFilePath: filePath, activeFileContent: content });
+    const id = filePath;
+    const title = fileTitle(filePath);
+    set((s) => ({
+      tabs: [...s.tabs, { id, path: filePath, title, initialContent: content }],
+      activeTabId: id,
+    }));
+  },
+
+  setActiveTab: (tabId: string) => {
+    if (!get().tabs.some((t) => t.id === tabId)) return;
+    set({ activeTabId: tabId });
+  },
+
+  closeTab: (tabId: string) => {
+    const { tabs, activeTabId } = get();
+    const idx = tabs.findIndex((t) => t.id === tabId);
+    if (idx === -1) return;
+    const next = tabs.filter((t) => t.id !== tabId);
+    let nextActive = activeTabId;
+    if (activeTabId === tabId) {
+      if (next.length === 0) {
+        nextActive = null;
+      } else if (idx >= next.length) {
+        nextActive = next[next.length - 1].id;
+      } else {
+        nextActive = next[idx].id;
+      }
+    }
+    set({ tabs: next, activeTabId: nextActive });
+  },
+
+  reorderTab: (draggedId: string, dropBeforeIndex: number) => {
+    const { tabs } = get();
+    const fromIndex = tabs.findIndex((t) => t.id === draggedId);
+    if (fromIndex === -1) return;
+    const n = tabs.length;
+    const drop = Math.max(0, Math.min(dropBeforeIndex, n));
+    let insertIndex = drop;
+    if (fromIndex < drop) {
+      insertIndex = drop - 1;
+    }
+    if (insertIndex === fromIndex) {
+      return;
+    }
+    const next = [...tabs];
+    const [item] = next.splice(fromIndex, 1);
+    next.splice(insertIndex, 0, item);
+    set({ tabs: next });
+  },
+
+  consumeTabBootstrap: (filePath: string) => {
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.path === filePath ? { ...t, initialContent: undefined } : t,
+      ),
+    }));
   },
 }));

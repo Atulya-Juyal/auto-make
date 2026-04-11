@@ -314,3 +314,99 @@ code {
   background: var(--app-scrollbar-thumb-active) !important;
 }
 
+/* Editor tab bar */
+.editor-tab-bar {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: #252526;
+  border-bottom: 1px solid #333;
+  gap: 1px;
+}
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  max-width: 200px;
+  min-width: 0;
+  flex-shrink: 0;
+  padding: 0 4px 0 10px;
+  height: 32px;
+  font-size: 12px;
+  color: #969696;
+  background-color: #2d2d2d;
+  cursor: grab;
+  user-select: none;
+}
+
+.editor-tab:active {
+  cursor: grabbing;
+}
+
+.editor-tab:hover {
+  color: #ccc;
+  background-color: #323232;
+}
+
+.editor-tab-active {
+  color: #fff;
+  background-color: #1e1e1e;
+  border-bottom: 1px solid #1e1e1e;
+  margin-bottom: -1px;
+}
+
+.editor-tab-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 6px 4px 6px 0;
+}
+
+.editor-tab-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  -webkit-user-drag: none;
+}
+
+.editor-tab-close:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.editor-tab-dragging {
+  opacity: 0.55;
+}
+
+.editor-tab-drop-target {
+  box-shadow: inset 2px 0 0 #007fd4;
+}
+
+.editor-tab-bar-tail {
+  flex: 1 0 32px;
+  min-width: 24px;
+  align-self: stretch;
+}
+
+/* Block Monaco from receiving drag/drop or focus while reordering tabs */
+.editor-pane-tab-dragging {
+  cursor: grabbing;
+}
+

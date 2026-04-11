@@ -1,6 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
-import Editor from '@monaco-editor/react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
+import { EditorTabsPane } from './components/EditorTabsPane';
 import { FileTreeNode } from './components/FileTreeNode';
 import TerminalPane from './components/TerminalPane';
 import { setExplorerMainGroupResizing } from './shell/explorerMainResize';
@@ -11,7 +11,7 @@ import './assets/main.css';
 const EXPLORER_WIDTH_PX = 260;
 
 function App(): ReactElement {
-  const { rootEntries, activeFileContent, initWorkspace } = useAppStore();
+  const { rootEntries, initWorkspace } = useAppStore();
 
   // Load the workspace when the app starts
   useEffect(() => {
@@ -77,24 +77,7 @@ function App(): ReactElement {
               style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}
             >
               <div className="app-panel-editor-inner">
-                <Editor
-                  height="100%"
-                  defaultLanguage="javascript"
-                  theme="vs-dark"
-                  value={activeFileContent}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    automaticLayout: true,
-                    scrollbar: {
-                      vertical: 'visible',
-                      horizontal: 'visible',
-                      useShadows: false,
-                      verticalScrollbarSize: 14,
-                      horizontalScrollbarSize: 12,
-                    },
-                  }}
-                />
+                <EditorTabsPane />
               </div>
             </Panel>
 
