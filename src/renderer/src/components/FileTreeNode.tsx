@@ -1,4 +1,9 @@
 import { type ReactElement } from 'react';
+import {
+  ExplorerChevronDown,
+  ExplorerChevronRight,
+  ExplorerFileIcon,
+} from './explorer/ExplorerIcons';
 import { useAppStore } from '../store/useAppStore';
 import type { FileNode } from '../store/useAppStore';
 
@@ -6,6 +11,15 @@ export interface FileTreeNodeProps {
   node: FileNode;
   depth: number;
 }
+
+const leadCol = {
+  width: 16,
+  minWidth: 16,
+  flexShrink: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const;
 
 export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
   const expandedPaths = useAppStore((s) => s.expandedPaths);
@@ -39,8 +53,6 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
     whiteSpace: 'nowrap' as const,
   };
 
-  const iconCell = { flexShrink: 0 as const, lineHeight: 1 };
-
   if (!node.isDirectory) {
     return (
       <div
@@ -59,8 +71,8 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
           color: '#fff',
         }}
       >
-        <span style={iconCell} aria-hidden>
-          📄
+        <span style={leadCol} aria-hidden>
+          <ExplorerFileIcon fileName={node.name} />
         </span>
         <span style={labelTruncate} title={node.name}>
           {node.name}
@@ -90,8 +102,8 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
           color: '#aaa',
         }}
       >
-        <span style={iconCell} aria-hidden>
-          {isExpanded ? '📂' : '📁'}
+        <span style={leadCol} aria-hidden>
+          {isExpanded ? <ExplorerChevronDown /> : <ExplorerChevronRight />}
         </span>
         <span style={labelTruncate} title={node.name}>
           {node.name}
@@ -103,11 +115,12 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps): ReactElement {
             <div
               style={{
                 ...rowBase,
-                paddingLeft: paddingLeft + 12,
+                paddingLeft: paddingLeft + 6,
                 color: '#888',
                 fontSize: '12px',
               }}
             >
+              <span style={leadCol} aria-hidden />
               <span style={labelTruncate}>Loading…</span>
             </div>
           ) : null}

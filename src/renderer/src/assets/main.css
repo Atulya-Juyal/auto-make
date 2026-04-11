@@ -405,6 +405,47 @@ code {
   align-self: stretch;
 }
 
+/* Explorer tree: chevrons + file-type icons */
+.explorer-chevron {
+  color: #c5c5c5;
+}
+
+.explorer-file-icon {
+  flex-shrink: 0;
+}
+
+.explorer-file-generic {
+  color: #c5c5c5;
+}
+
+.explorer-file-react {
+  color: #61dafb;
+}
+
+.explorer-file-json {
+  color: #cbcb41;
+}
+
+.explorer-file-css {
+  color: #563d7c;
+}
+
+.explorer-file-html {
+  color: #e37933;
+}
+
+.explorer-file-md {
+  color: #519aba;
+}
+
+.explorer-file-image {
+  color: #b5cea8;
+}
+
+.explorer-file-config {
+  color: #9d9d9d;
+}
+
 /* Block Monaco from receiving drag/drop or focus while reordering tabs */
 .editor-pane-tab-dragging {
   cursor: grabbing;
