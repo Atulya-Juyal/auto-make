@@ -1,12 +1,13 @@
 import { useEffect, type ReactElement } from 'react';
 import Editor from '@monaco-editor/react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
+import { FileTreeNode } from './components/FileTreeNode';
 import TerminalPane from './components/TerminalPane';
 import { useAppStore } from './store/useAppStore';
 import './assets/main.css';
 
 function App(): ReactElement {
-  const { files, activeFileContent, initWorkspace, openFile } = useAppStore();
+  const { rootEntries, activeFileContent, initWorkspace } = useAppStore();
 
   // Load the workspace when the app starts
   useEffect(() => {
@@ -27,20 +28,18 @@ function App(): ReactElement {
           <h3 style={{ padding: '10px', margin: 0, fontSize: '14px', borderBottom: '1px solid #333' }}>
             EXPLORER
           </h3>
-          <div style={{ overflowY: 'auto', flex: 1, padding: '5px', minHeight: 0 }}>
-            {files.map((file) => (
-              <div
-                key={file.path}
-                onClick={() => !file.isDirectory && openFile(file.path)}
-                style={{
-                  padding: '5px 10px',
-                  cursor: file.isDirectory ? 'default' : 'pointer',
-                  color: file.isDirectory ? '#aaa' : '#fff',
-                  fontSize: '13px',
-                }}
-              >
-                {file.isDirectory ? '📁 ' : '📄 '} {file.name}
-              </div>
+          <div
+            style={{
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              flex: 1,
+              padding: '5px',
+              minHeight: 0,
+              minWidth: 0,
+            }}
+          >
+            {rootEntries.map((node) => (
+              <FileTreeNode key={node.path} node={node} depth={0} />
             ))}
           </div>
         </Panel>
