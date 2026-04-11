@@ -3,8 +3,12 @@ import Editor from '@monaco-editor/react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { FileTreeNode } from './components/FileTreeNode';
 import TerminalPane from './components/TerminalPane';
+import { setExplorerMainGroupResizing } from './shell/explorerMainResize';
 import { useAppStore } from './store/useAppStore';
 import './assets/main.css';
+
+/** Sidebar width in CSS pixels; stays constant when the window is resized (not percentage-based). */
+const EXPLORER_WIDTH_PX = 260;
 
 function App(): ReactElement {
   const { rootEntries, activeFileContent, initWorkspace } = useAppStore();
@@ -16,12 +20,23 @@ function App(): ReactElement {
 
   return (
     <div className="app-root">
-      <Group orientation="horizontal" id="explorer-main" className="app-group app-group--horizontal">
+      <Group
+        orientation="horizontal"
+        id="explorer-main"
+        className="app-group app-group--horizontal"
+        onLayoutChange={() => {
+          setExplorerMainGroupResizing(true);
+        }}
+        onLayoutChanged={() => {
+          setExplorerMainGroupResizing(false);
+        }}
+      >
         <Panel
           id="explorer"
-          defaultSize="20%"
-          minSize="12%"
-          maxSize="50%"
+          defaultSize={EXPLORER_WIDTH_PX}
+          minSize={160}
+          maxSize={560}
+          groupResizeBehavior="preserve-pixel-size"
           className="app-panel app-panel-explorer"
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
         >
@@ -46,7 +61,12 @@ function App(): ReactElement {
 
         <Separator id="sep-explorer-main" className="app-separator app-separator-vertical" />
 
-        <Panel id="main" minSize="35%" className="app-panel app-panel-main">
+        <Panel
+          id="main"
+          minSize="35%"
+          groupResizeBehavior="preserve-relative-size"
+          className="app-panel app-panel-main"
+        >
           <Group orientation="vertical" id="editor-terminal" className="app-group app-group--vertical">
             <Panel
               id="editor"
@@ -61,7 +81,11 @@ function App(): ReactElement {
                   defaultLanguage="javascript"
                   theme="vs-dark"
                   value={activeFileContent}
-                  options={{ minimap: { enabled: false }, fontSize: 14 }}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    automaticLayout: true,
+                  }}
                 />
               </div>
             </Panel>
