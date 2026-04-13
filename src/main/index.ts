@@ -3,6 +3,7 @@ import { setupFSHandlers } from './fs';
 import { setupWindowControls } from './windowControls';
 import { setupDialogHandlers } from './dialogHandlers';
 import { setupSecretsHandlers } from './secrets';
+import { setupAIHandlers } from './ai';
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -66,6 +67,7 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   setupSecretsHandlers()
+  setupAIHandlers()
   createWindow()
 
   app.on('activate', function () {

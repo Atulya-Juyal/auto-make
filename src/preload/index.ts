@@ -4,6 +4,9 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 const TERMINAL_OUTPUT_EVENT = 'auto-mern:terminal-output'
 const TERMINAL_SESSIONS_RESET_EVENT = 'auto-mern:terminal-sessions-reset'
 const WIN_MAX_EVENT = 'auto-mern:win-maximize'
+const AI_STREAM_CHUNK_EVENT = 'auto-mern:ai-stream-chunk'
+const AI_STREAM_END_EVENT = 'auto-mern:ai-stream-end'
+const AI_STREAM_ERROR_EVENT = 'auto-mern:ai-stream-error'
 
 const forwardTerminalData = (
   _event: IpcRendererEvent,
@@ -20,6 +23,27 @@ const forwardSessionsReset = (): void => {
   window.dispatchEvent(new CustomEvent(TERMINAL_SESSIONS_RESET_EVENT))
 }
 
+const forwardAiStreamChunk = (
+  _event: IpcRendererEvent,
+  payload: { requestId: string; messageId: string; chunk: string }
+): void => {
+  window.dispatchEvent(new CustomEvent(AI_STREAM_CHUNK_EVENT, { detail: payload }))
+}
+
+const forwardAiStreamEnd = (
+  _event: IpcRendererEvent,
+  payload: { requestId: string; messageId: string }
+): void => {
+  window.dispatchEvent(new CustomEvent(AI_STREAM_END_EVENT, { detail: payload }))
+}
+
+const forwardAiStreamError = (
+  _event: IpcRendererEvent,
+  payload: { requestId: string; messageId: string; error: string }
+): void => {
+  window.dispatchEvent(new CustomEvent(AI_STREAM_ERROR_EVENT, { detail: payload }))
+}
+
 ipcRenderer.removeAllListeners('terminal.incData')
 ipcRenderer.on('terminal.incData', forwardTerminalData)
 
@@ -28,6 +52,15 @@ ipcRenderer.on('terminal.sessionsReset', forwardSessionsReset)
 
 ipcRenderer.removeAllListeners('win-maximize-changed')
 ipcRenderer.on('win-maximize-changed', forwardWinMax)
+
+ipcRenderer.removeAllListeners('ai.streamChunk')
+ipcRenderer.on('ai.streamChunk', forwardAiStreamChunk)
+
+ipcRenderer.removeAllListeners('ai.streamEnd')
+ipcRenderer.on('ai.streamEnd', forwardAiStreamEnd)
+
+ipcRenderer.removeAllListeners('ai.streamError')
+ipcRenderer.on('ai.streamError', forwardAiStreamError)
 
 const api = {
   terminalBootstrap: () =>
@@ -80,6 +113,39 @@ const api = {
   hasApiKeySecure: () => ipcRenderer.invoke('secrets.hasApiKey') as Promise<boolean>,
   isSecureStorageAvailable: () =>
     ipcRenderer.invoke('secrets.isSecureStorageAvailable') as Promise<boolean>,
+  startAiStream: (payload: {
+    requestId: string
+    messageId: string
+    prompt: string
+    aiMode: 'Agent' | 'Plan' | 'Debug' | 'Ask'
+    activeFileContent: string
+  }) => ipcRenderer.invoke('ai.startStream', payload) as Promise<{ accepted: boolean }>,
+  cancelAiStream: (requestId: string) => ipcRenderer.invoke('ai.cancelStream', requestId) as Promise<void>,
+  onAiStreamChunk: (
+    callback: (payload: { requestId: string; messageId: string; chunk: string }) => void
+  ): (() => void) => {
+    const listener = (ev: Event): void => {
+      callback((ev as CustomEvent<{ requestId: string; messageId: string; chunk: string }>).detail)
+    }
+    window.addEventListener(AI_STREAM_CHUNK_EVENT, listener)
+    return () => window.removeEventListener(AI_STREAM_CHUNK_EVENT, listener)
+  },
+  onAiStreamEnd: (callback: (payload: { requestId: string; messageId: string }) => void): (() => void) => {
+    const listener = (ev: Event): void => {
+      callback((ev as CustomEvent<{ requestId: string; messageId: string }>).detail)
+    }
+    window.addEventListener(AI_STREAM_END_EVENT, listener)
+    return () => window.removeEventListener(AI_STREAM_END_EVENT, listener)
+  },
+  onAiStreamError: (
+    callback: (payload: { requestId: string; messageId: string; error: string }) => void
+  ): (() => void) => {
+    const listener = (ev: Event): void => {
+      callback((ev as CustomEvent<{ requestId: string; messageId: string; error: string }>).detail)
+    }
+    window.addEventListener(AI_STREAM_ERROR_EVENT, listener)
+    return () => window.removeEventListener(AI_STREAM_ERROR_EVENT, listener)
+  },
 
   winMinimize: () => ipcRenderer.invoke('win.minimize') as Promise<void>,
   winMaximizeToggle: () => ipcRenderer.invoke('win.maximizeToggle') as Promise<void>,

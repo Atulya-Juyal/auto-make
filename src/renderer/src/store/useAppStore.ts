@@ -76,6 +76,10 @@ interface AppState {
   setApiKey: (key: string) => void
   setAiMode: (mode: AiMode) => void
   addChatMessage: (msg: Omit<ChatMessage, 'id' | 'createdAt'>) => void
+  sendChatMessage: (content: string) => Promise<void>
+  appendAiChunk: (messageId: string, chunk: string) => void
+  finishAiStream: (requestId: string, messageId: string) => void
+  failAiStream: (requestId: string, messageId: string, error: string) => void
   clearChat: () => void
   setSettingsOpen: (open: boolean) => void
   toggleSettings: () => void
@@ -99,6 +103,8 @@ interface AppState {
 
   /** Last known saved file contents (disk / last save); used to detect dirty tabs. */
   savedContentByPath: Record<string, string>
+  /** Last known editor text (live model value) by path; used for AI context without DOM reads. */
+  editorContentByPath: Record<string, string>
   /** Paths whose editor buffer differs from `savedContentByPath`. */
   dirtyPaths: Set<string>
   /** Called from Monaco when a file model’s text changes. */
@@ -149,6 +155,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   explorerPaneFocused: false,
   _editorGetValue: null,
   savedContentByPath: {},
+  editorContentByPath: {},
   dirtyPaths: new Set<string>(),
 
   setExplorerSelectedPath: (path) => set({ explorerSelectedPath: path }),
@@ -159,6 +166,80 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({
       chatHistory: [...s.chatHistory, { ...msg, id: newChatId(), createdAt: Date.now() }]
     })),
+  sendChatMessage: async (content) => {
+    const trimmed = content.trim()
+    if (!trimmed) return
+    const s = get()
+    if (s.isAiThinking) return
+
+    const userMsg: ChatMessage = {
+      id: newChatId(),
+      role: 'user',
+      content: trimmed,
+      createdAt: Date.now()
+    }
+    const aiMsg: ChatMessage = {
+      id: newChatId(),
+      role: 'ai',
+      content: '',
+      createdAt: Date.now()
+    }
+    const requestId = newChatId()
+
+    const activeTab = s.activeTabId ? s.tabs.find((t) => t.id === s.activeTabId) : null
+    const activePath = activeTab?.path ?? ''
+    const activeFileContent =
+      (activePath ? s.editorContentByPath[activePath] : undefined) ??
+      (activePath ? s.savedContentByPath[activePath] : undefined) ??
+      ''
+    const cappedContext = activeFileContent.slice(0, 12000)
+
+    set((prev) => ({
+      chatHistory: [...prev.chatHistory, userMsg, aiMsg],
+      isAiThinking: true
+    }))
+
+    try {
+      const res = await window.api.startAiStream({
+        requestId,
+        messageId: aiMsg.id,
+        prompt: trimmed,
+        aiMode: s.aiMode,
+        activeFileContent: cappedContext
+      })
+      if (!res?.accepted) {
+        get().failAiStream(requestId, aiMsg.id, 'AI request was not accepted.')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      get().failAiStream(requestId, aiMsg.id, msg)
+    }
+  },
+  appendAiChunk: (messageId, chunk) => {
+    if (!chunk) return
+    set((s) => ({
+      chatHistory: s.chatHistory.map((m) =>
+        m.id === messageId && m.role === 'ai' ? { ...m, content: `${m.content}${chunk}` } : m
+      )
+    }))
+  },
+  finishAiStream: (_requestId, _messageId) => {
+    set({ isAiThinking: false })
+  },
+  failAiStream: (_requestId, messageId, error) => {
+    const safeError = error.trim() || 'Unknown streaming error.'
+    set((s) => ({
+      isAiThinking: false,
+      chatHistory: s.chatHistory.map((m) =>
+        m.id === messageId && m.role === 'ai'
+          ? {
+              ...m,
+              content: m.content || `Error: ${safeError}`
+            }
+          : m
+      )
+    }))
+  },
   clearChat: () => set({ chatHistory: [] }),
   setSettingsOpen: (open) => set({ isSettingsOpen: open }),
   toggleSettings: () => set((s) => ({ isSettingsOpen: !s.isSettingsOpen })),
@@ -201,7 +282,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       const next = new Set(s.dirtyPaths)
       if (dirty) next.add(filePath)
       else next.delete(filePath)
-      return { dirtyPaths: next }
+      return {
+        dirtyPaths: next,
+        editorContentByPath: { ...s.editorContentByPath, [filePath]: value }
+      }
     })
   },
 
@@ -266,6 +350,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       tabs: [...s.tabs, { id, path: filePath, title, initialContent: content }],
       activeTabId: id,
       savedContentByPath: { ...s.savedContentByPath, [filePath]: content },
+      editorContentByPath: { ...s.editorContentByPath, [filePath]: content },
       dirtyPaths: removeFromSet(s.dirtyPaths, filePath)
     }))
   },
@@ -293,11 +378,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     const closed = tabs[idx]
     set((s) => {
       const { [closed.path]: _removed, ...restSaved } = s.savedContentByPath
+      const { [closed.path]: _removedEditor, ...restEditor } = s.editorContentByPath
       return {
         tabs: next,
         activeTabId: nextActive,
         dirtyPaths: removeFromSet(s.dirtyPaths, closed.path),
-        savedContentByPath: restSaved
+        savedContentByPath: restSaved,
+        editorContentByPath: restEditor
       }
     })
   },
@@ -376,7 +463,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeAllTabs: () => {
-    set({ tabs: [], activeTabId: null, dirtyPaths: new Set(), savedContentByPath: {} })
+    set({
+      tabs: [],
+      activeTabId: null,
+      dirtyPaths: new Set(),
+      savedContentByPath: {},
+      editorContentByPath: {}
+    })
   },
 
   revealPathInTree: async (targetDir: string) => {
@@ -491,6 +584,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await window.api.writeFile(tab.path, text)
     set((s) => ({
       savedContentByPath: { ...s.savedContentByPath, [tab.path]: text },
+      editorContentByPath: { ...s.editorContentByPath, [tab.path]: text },
       dirtyPaths: removeFromSet(s.dirtyPaths, tab.path)
     }))
   },

@@ -8,7 +8,10 @@ export function SidebarChat(): ReactElement {
   const chatHistory = useAppStore((s) => s.chatHistory)
   const isAiThinking = useAppStore((s) => s.isAiThinking)
   const setAiMode = useAppStore((s) => s.setAiMode)
-  const addChatMessage = useAppStore((s) => s.addChatMessage)
+  const sendChatMessage = useAppStore((s) => s.sendChatMessage)
+  const appendAiChunk = useAppStore((s) => s.appendAiChunk)
+  const finishAiStream = useAppStore((s) => s.finishAiStream)
+  const failAiStream = useAppStore((s) => s.failAiStream)
   const [input, setInput] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
   const modeMenuRef = useRef<HTMLDivElement>(null)
@@ -17,6 +20,23 @@ export function SidebarChat(): ReactElement {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [chatHistory])
+
+  useEffect(() => {
+    const offChunk = window.api.onAiStreamChunk(({ messageId, chunk }) => {
+      appendAiChunk(messageId, chunk)
+    })
+    const offEnd = window.api.onAiStreamEnd(({ requestId, messageId }) => {
+      finishAiStream(requestId, messageId)
+    })
+    const offErr = window.api.onAiStreamError(({ requestId, messageId, error }) => {
+      failAiStream(requestId, messageId, error)
+    })
+    return () => {
+      offChunk()
+      offEnd()
+      offErr()
+    }
+  }, [appendAiChunk, finishAiStream, failAiStream])
 
   useEffect(() => {
     if (!modeMenuOpen) return
@@ -28,17 +48,17 @@ export function SidebarChat(): ReactElement {
     return () => document.removeEventListener('mousedown', onDown, true)
   }, [modeMenuOpen])
 
-  const submit = (): void => {
+  const submit = async (): Promise<void> => {
     const trimmed = input.trim()
     if (!trimmed || isAiThinking) return
-    addChatMessage({ role: 'user', content: trimmed })
+    await sendChatMessage(trimmed)
     setInput('')
   }
 
   const onTextareaKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      submit()
+      void submit()
     }
   }
 
@@ -100,7 +120,7 @@ export function SidebarChat(): ReactElement {
                 </div>
               ) : null}
             </div>
-            <button type="button" className="ai-sidebar-send" onClick={submit} disabled={isAiThinking}>
+            <button type="button" className="ai-sidebar-send" onClick={() => void submit()} disabled={isAiThinking}>
               Send
             </button>
           </div>

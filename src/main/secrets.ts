@@ -29,6 +29,18 @@ async function writeSecrets(payload: SecretsPayload): Promise<void> {
   await fs.writeFile(p, JSON.stringify(payload, null, 2), 'utf-8')
 }
 
+export async function getApiKeyFromSecureStorage(): Promise<string> {
+  if (!safeStorage.isEncryptionAvailable()) return ''
+  const secrets = await readSecrets()
+  const stored = secrets.apiKey
+  if (!stored) return ''
+  try {
+    return safeStorage.decryptString(Buffer.from(stored, 'base64')).trim()
+  } catch {
+    return ''
+  }
+}
+
 export function setupSecretsHandlers(): void {
   ipcMain.removeHandler('secrets.getApiKey')
   ipcMain.removeHandler('secrets.setApiKey')
@@ -38,16 +50,7 @@ export function setupSecretsHandlers(): void {
   ipcMain.handle('secrets.isSecureStorageAvailable', () => safeStorage.isEncryptionAvailable())
 
   ipcMain.handle('secrets.getApiKey', async () => {
-    if (!safeStorage.isEncryptionAvailable()) return ''
-    const secrets = await readSecrets()
-    const stored = secrets.apiKey
-    if (!stored) return ''
-    try {
-      const decrypted = safeStorage.decryptString(Buffer.from(stored, 'base64'))
-      return decrypted
-    } catch {
-      return ''
-    }
+    return await getApiKeyFromSecureStorage()
   })
 
   ipcMain.handle('secrets.setApiKey', async (_event, key: string) => {

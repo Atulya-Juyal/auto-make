@@ -23,6 +23,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@langchain/core": "^1.1.39",
+    "@langchain/google-genai": "^2.1.26",
+    "@langchain/langgraph": "^1.2.8",
+    "@langchain/openai": "^1.4.4",
     "@monaco-editor/react": "^4.7.0",
     "electron-updater": "^6.3.9",
     "node-pty": "^1.1.0",

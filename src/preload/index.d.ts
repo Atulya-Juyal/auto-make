@@ -35,6 +35,21 @@ declare global {
       setApiKeySecure: (key: string) => Promise<void>
       hasApiKeySecure: () => Promise<boolean>
       isSecureStorageAvailable: () => Promise<boolean>
+      startAiStream: (payload: {
+        requestId: string
+        messageId: string
+        prompt: string
+        aiMode: 'Agent' | 'Plan' | 'Debug' | 'Ask'
+        activeFileContent: string
+      }) => Promise<{ accepted: boolean }>
+      cancelAiStream: (requestId: string) => Promise<void>
+      onAiStreamChunk: (
+        callback: (payload: { requestId: string; messageId: string; chunk: string }) => void
+      ) => () => void
+      onAiStreamEnd: (callback: (payload: { requestId: string; messageId: string }) => void) => () => void
+      onAiStreamError: (
+        callback: (payload: { requestId: string; messageId: string; error: string }) => void
+      ) => () => void
       winMinimize: () => Promise<void>
       winMaximizeToggle: () => Promise<void>
       winClose: () => Promise<void>
