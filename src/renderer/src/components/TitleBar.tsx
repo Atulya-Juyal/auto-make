@@ -1,44 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { IdeNamePrompt } from './IdeNamePrompt';
+import appIcon from '../assets/app-icon.png';
 
 type NamePromptKind = 'file' | 'folder' | null;
 
-/** Electron-style atom logo (cyan orbits), similar to the default app title bar icon. */
-function ElectronLogo(): ReactElement {
+/** App logo used across title bar + packaged app icons. */
+function AppLogo(): ReactElement {
   return (
-    <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden className="title-bar-logo">
-      <circle cx="16" cy="16" r="2.8" fill="#9feaf9" />
-      <ellipse
-        cx="16"
-        cy="16"
-        rx="11"
-        ry="4.2"
-        fill="none"
-        stroke="#9feaf9"
-        strokeWidth="1.4"
-      />
-      <ellipse
-        cx="16"
-        cy="16"
-        rx="11"
-        ry="4.2"
-        fill="none"
-        stroke="#9feaf9"
-        strokeWidth="1.4"
-        transform="rotate(60 16 16)"
-      />
-      <ellipse
-        cx="16"
-        cy="16"
-        rx="11"
-        ry="4.2"
-        fill="none"
-        stroke="#9feaf9"
-        strokeWidth="1.4"
-        transform="rotate(-60 16 16)"
-      />
-    </svg>
+    <img src={appIcon} alt="" aria-hidden className="title-bar-logo title-bar-logo--adaptive" />
   );
 }
 
@@ -169,8 +139,8 @@ export function TitleBar(): ReactElement {
       />
     <header className="title-bar" onDoubleClick={onTitleBarDblClick}>
       <div className="title-bar-leading title-bar-no-max-dbl">
-        <ElectronLogo />
-        <span className="title-bar-app-name">Electron</span>
+        <AppLogo />
+        <span className="title-bar-app-name">AutoMake</span>
         <div className="title-bar-menu-wrap" ref={menuRef}>
           <button
             type="button"

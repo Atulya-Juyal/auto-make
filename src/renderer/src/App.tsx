@@ -17,6 +17,7 @@ const TERMINAL_COLLAPSED_PX = 38
 
 function App(): ReactElement {
   const rootEntries = useAppStore((s) => s.rootEntries)
+  const workspacePath = useAppStore((s) => s.workspacePath)
   const initWorkspace = useAppStore((s) => s.initWorkspace)
   const setExplorerSelectedPath = useAppStore((s) => s.setExplorerSelectedPath)
   const setExplorerPaneFocused = useAppStore((s) => s.setExplorerPaneFocused)
@@ -31,6 +32,8 @@ function App(): ReactElement {
   useEffect(() => {
     initWorkspace()
   }, [initWorkspace])
+
+  const workspaceLabel = workspacePath.split(/[/\\]/).filter(Boolean).pop() ?? workspacePath
 
   return (
     <div className="app-shell">
@@ -116,9 +119,15 @@ function App(): ReactElement {
                     explorerTreeScrollRef.current?.focus({ preventScroll: true })
                   }}
                 >
-                  {rootEntries.map((node) => (
-                    <FileTreeNode key={node.path} node={node} depth={0} />
-                  ))}
+                  {workspacePath ? (
+                    <FileTreeNode
+                      key={workspacePath}
+                      node={{ name: workspaceLabel, isDirectory: true, path: workspacePath }}
+                      depth={0}
+                    />
+                  ) : (
+                    rootEntries.map((node) => <FileTreeNode key={node.path} node={node} depth={0} />)
+                  )}
                 </div>
               ) : null}
             </div>

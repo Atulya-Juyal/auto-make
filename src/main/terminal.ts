@@ -60,6 +60,16 @@ function listTerminals(state: WindowTerminalState): { id: string; label: string 
   return [...state.sessions.keys()].map((id) => ({ id, label }))
 }
 
+function safeSend(wc: WebContents, channel: string, payload?: unknown): void {
+  if (wc.isDestroyed()) return
+  try {
+    if (payload === undefined) wc.send(channel)
+    else wc.send(channel, payload)
+  } catch {
+    /* window already closing/destroyed */
+  }
+}
+
 function spawnPty(wc: WebContents, state: WindowTerminalState): { id: string; label: string } {
   const id = newSessionId()
 
@@ -78,7 +88,7 @@ function spawnPty(wc: WebContents, state: WindowTerminalState): { id: string; la
   state.sessions.set(id, ptyProcess)
 
   ptyProcess.onData((data) => {
-    wc.send('terminal.incData', { id, data })
+    safeSend(wc, 'terminal.incData', { id, data })
   })
 
   return { id, label: shellDisplayName() }

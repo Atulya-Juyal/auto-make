@@ -135,8 +135,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       workspacePath: path,
       rootEntries: fileList,
-      expandedPaths: new Set(),
-      dirChildren: {},
+      expandedPaths: new Set([path]),
+      dirChildren: { [path]: fileList },
       loadingPaths: new Set(),
       explorerSelectedPath: null,
       explorerPaneFocused: false
