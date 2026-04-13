@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 import { EditorTabsPane } from './components/EditorTabsPane'
 import { FileTreeNode } from './components/FileTreeNode'
+import { SidebarChat } from './components/SidebarChat'
+import { Settings } from './components/Settings'
 import { TitleBar } from './components/TitleBar'
 import { ExplorerChevronDown, ExplorerChevronUp } from './components/explorer/ExplorerIcons'
 import TerminalPane, { type TerminalPaneHandle } from './components/TerminalPane'
@@ -12,6 +14,8 @@ import './assets/main.css'
 /** Sidebar width in CSS pixels; stays constant when the window is resized (not percentage-based). */
 const EXPLORER_WIDTH_PX = 260
 const EXPLORER_COLLAPSED_PX = 38
+const AI_SIDEBAR_WIDTH_PX = 340
+const AI_SIDEBAR_COLLAPSED_PX = 38
 /** Matches `.terminal-panel-header` min-height + border (collapsed = header row only). */
 const TERMINAL_COLLAPSED_PX = 38
 
@@ -19,19 +23,24 @@ function App(): ReactElement {
   const rootEntries = useAppStore((s) => s.rootEntries)
   const workspacePath = useAppStore((s) => s.workspacePath)
   const initWorkspace = useAppStore((s) => s.initWorkspace)
+  const initSecretsState = useAppStore((s) => s.initSecretsState)
+  const toggleSettings = useAppStore((s) => s.toggleSettings)
   const setExplorerSelectedPath = useAppStore((s) => s.setExplorerSelectedPath)
   const setExplorerPaneFocused = useAppStore((s) => s.setExplorerPaneFocused)
   const explorerTreeScrollRef = useRef<HTMLDivElement>(null)
   const explorerPanelRef = usePanelRef()
+  const aiPanelRef = usePanelRef()
   const terminalPanelRef = usePanelRef()
   const terminalPaneRef = useRef<TerminalPaneHandle>(null)
   const [explorerCollapsed, setExplorerCollapsed] = useState(false)
+  const [aiCollapsed, setAiCollapsed] = useState(false)
   const [terminalCollapsed, setTerminalCollapsed] = useState(false)
 
   // Load the workspace when the app starts
   useEffect(() => {
-    initWorkspace()
-  }, [initWorkspace])
+    void initWorkspace()
+    void initSecretsState()
+  }, [initWorkspace, initSecretsState])
 
   const workspaceLabel = workspacePath.split(/[/\\]/).filter(Boolean).pop() ?? workspacePath
 
@@ -101,34 +110,45 @@ function App(): ReactElement {
                 </button>
               </div>
               {!explorerCollapsed ? (
-                <div
-                  ref={explorerTreeScrollRef}
-                  tabIndex={-1}
-                  className="app-overlay-scroll explorer-tree-scroll"
-                  style={{
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                    flex: 1,
-                    padding: '5px',
-                    minHeight: 0,
-                    minWidth: 0
-                  }}
-                  onMouseDown={(e) => {
-                    if ((e.target as HTMLElement).closest('[data-explorer-row]')) return
-                    setExplorerSelectedPath(null)
-                    explorerTreeScrollRef.current?.focus({ preventScroll: true })
-                  }}
-                >
-                  {workspacePath ? (
-                    <FileTreeNode
-                      key={workspacePath}
-                      node={{ name: workspaceLabel, isDirectory: true, path: workspacePath }}
-                      depth={0}
-                    />
-                  ) : (
-                    rootEntries.map((node) => <FileTreeNode key={node.path} node={node} depth={0} />)
-                  )}
-                </div>
+                <>
+                  <div
+                    ref={explorerTreeScrollRef}
+                    tabIndex={-1}
+                    className="app-overlay-scroll explorer-tree-scroll"
+                    style={{
+                      overflowY: 'auto',
+                      overflowX: 'hidden',
+                      flex: 1,
+                      padding: '5px',
+                      minHeight: 0,
+                      minWidth: 0
+                    }}
+                    onMouseDown={(e) => {
+                      if ((e.target as HTMLElement).closest('[data-explorer-row]')) return
+                      setExplorerSelectedPath(null)
+                      explorerTreeScrollRef.current?.focus({ preventScroll: true })
+                    }}
+                  >
+                    {workspacePath ? (
+                      <FileTreeNode
+                        key={workspacePath}
+                        node={{ name: workspaceLabel, isDirectory: true, path: workspacePath }}
+                        depth={0}
+                      />
+                    ) : (
+                      rootEntries.map((node) => <FileTreeNode key={node.path} node={node} depth={0} />)
+                    )}
+                  </div>
+                  <div className="explorer-settings-footer">
+                    <button
+                      type="button"
+                      className="explorer-settings-button"
+                      onClick={() => toggleSettings()}
+                    >
+                      ⚙ Settings
+                    </button>
+                  </div>
+                </>
               ) : null}
             </div>
           </Panel>
@@ -137,6 +157,7 @@ function App(): ReactElement {
 
           <Panel
             id="main"
+            defaultSize="60%"
             minSize="35%"
             groupResizeBehavior="preserve-relative-size"
             className="app-panel app-panel-main"
@@ -228,8 +249,47 @@ function App(): ReactElement {
               </Panel>
             </Group>
           </Panel>
+
+          <Separator id="sep-main-ai" className="app-separator app-separator-vertical" />
+
+          <Panel
+            id="ai-sidebar"
+            defaultSize={AI_SIDEBAR_WIDTH_PX}
+            minSize={220}
+            maxSize={640}
+            groupResizeBehavior="preserve-pixel-size"
+            className="app-panel app-panel-ai"
+            collapsible
+            collapsedSize={AI_SIDEBAR_COLLAPSED_PX}
+            panelRef={aiPanelRef}
+            onResize={(size) => {
+              setAiCollapsed(size.inPixels <= AI_SIDEBAR_COLLAPSED_PX + 2)
+            }}
+          >
+            <div className="ai-panel-shell">
+              <div className={`ai-panel-header${aiCollapsed ? ' ai-panel-header--collapsed' : ''}`}>
+                {!aiCollapsed ? <span className="ai-panel-title">AI ASSISTANT</span> : null}
+                <button
+                  type="button"
+                  className="ai-panel-toggle"
+                  aria-label={aiCollapsed ? 'Expand AI sidebar' : 'Collapse AI sidebar'}
+                  title={aiCollapsed ? 'Expand AI sidebar' : 'Collapse AI sidebar'}
+                  onClick={() => {
+                    const p = aiPanelRef.current
+                    if (!p) return
+                    if (p.isCollapsed()) p.expand()
+                    else p.collapse()
+                  }}
+                >
+                  {aiCollapsed ? '‹' : '›'}
+                </button>
+              </div>
+              {!aiCollapsed ? <SidebarChat /> : null}
+            </div>
+          </Panel>
         </Group>
       </div>
+      <Settings />
     </div>
   )
 }

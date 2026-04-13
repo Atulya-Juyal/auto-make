@@ -75,6 +75,11 @@ const api = {
 
   openFileDialog: () => ipcRenderer.invoke('dialog.openFile') as Promise<string | null>,
   openFolderDialog: () => ipcRenderer.invoke('dialog.openFolder') as Promise<string | null>,
+  getApiKeySecure: () => ipcRenderer.invoke('secrets.getApiKey') as Promise<string>,
+  setApiKeySecure: (key: string) => ipcRenderer.invoke('secrets.setApiKey', key) as Promise<void>,
+  hasApiKeySecure: () => ipcRenderer.invoke('secrets.hasApiKey') as Promise<boolean>,
+  isSecureStorageAvailable: () =>
+    ipcRenderer.invoke('secrets.isSecureStorageAvailable') as Promise<boolean>,
 
   winMinimize: () => ipcRenderer.invoke('win.minimize') as Promise<void>,
   winMaximizeToggle: () => ipcRenderer.invoke('win.maximizeToggle') as Promise<void>,

@@ -2,6 +2,7 @@ import { setupTerminal } from './terminal';
 import { setupFSHandlers } from './fs';
 import { setupWindowControls } from './windowControls';
 import { setupDialogHandlers } from './dialogHandlers';
+import { setupSecretsHandlers } from './secrets';
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -64,6 +65,7 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  setupSecretsHandlers()
   createWindow()
 
   app.on('activate', function () {

@@ -31,6 +31,10 @@ declare global {
       normalizePath: (p: string) => Promise<string>
       openFileDialog: () => Promise<string | null>
       openFolderDialog: () => Promise<string | null>
+      getApiKeySecure: () => Promise<string>
+      setApiKeySecure: (key: string) => Promise<void>
+      hasApiKeySecure: () => Promise<boolean>
+      isSecureStorageAvailable: () => Promise<boolean>
       winMinimize: () => Promise<void>
       winMaximizeToggle: () => Promise<void>
       winClose: () => Promise<void>

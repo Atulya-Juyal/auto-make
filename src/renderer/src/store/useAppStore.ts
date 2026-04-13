@@ -14,6 +14,15 @@ export interface EditorTab {
   initialContent?: string
 }
 
+export type AiMode = 'Agent' | 'Plan' | 'Debug' | 'Ask'
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'ai'
+  content: string
+  createdAt: number
+}
+
 function fileTitle(filePath: string): string {
   const parts = filePath.split(/[/\\]/)
   return parts[parts.length - 1] || filePath
@@ -42,6 +51,13 @@ function pathUnderWorkspace(ws: string, p: string): boolean {
 }
 
 interface AppState {
+  apiKey: string
+  hasSavedApiKey: boolean
+  aiMode: AiMode
+  chatHistory: ChatMessage[]
+  isAiThinking: boolean
+  isSettingsOpen: boolean
+  isSecureStorageAvailable: boolean
   workspacePath: string
   rootEntries: FileNode[]
   expandedPaths: Set<string>
@@ -57,6 +73,14 @@ interface AppState {
   explorerPaneFocused: boolean
   setExplorerSelectedPath: (path: string | null) => void
   setExplorerPaneFocused: (focused: boolean) => void
+  setApiKey: (key: string) => void
+  setAiMode: (mode: AiMode) => void
+  addChatMessage: (msg: Omit<ChatMessage, 'id' | 'createdAt'>) => void
+  clearChat: () => void
+  setSettingsOpen: (open: boolean) => void
+  toggleSettings: () => void
+  initSecretsState: () => Promise<void>
+  saveApiKeySecure: (key: string) => Promise<void>
 
   /** Monaco accessor for Save; registered from EditorTabsPane. */
   _editorGetValue: (() => string | null) | null
@@ -99,7 +123,21 @@ function removeFromSet(set: Set<string>, value: string): Set<string> {
   return next
 }
 
+function newChatId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `chat-${Date.now()}-${Math.floor(Math.random() * 1000000)}`
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
+  apiKey: '',
+  hasSavedApiKey: false,
+  aiMode: 'Ask',
+  chatHistory: [],
+  isAiThinking: false,
+  isSettingsOpen: false,
+  isSecureStorageAvailable: true,
   workspacePath: '',
   rootEntries: [],
   expandedPaths: new Set(),
@@ -115,7 +153,45 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setExplorerSelectedPath: (path) => set({ explorerSelectedPath: path }),
   setExplorerPaneFocused: (focused) => set({ explorerPaneFocused: focused }),
+  setApiKey: (key) => set({ apiKey: key.trim() }),
+  setAiMode: (mode) => set({ aiMode: mode }),
+  addChatMessage: (msg) =>
+    set((s) => ({
+      chatHistory: [...s.chatHistory, { ...msg, id: newChatId(), createdAt: Date.now() }]
+    })),
+  clearChat: () => set({ chatHistory: [] }),
+  setSettingsOpen: (open) => set({ isSettingsOpen: open }),
+  toggleSettings: () => set((s) => ({ isSettingsOpen: !s.isSettingsOpen })),
   registerEditorValueGetter: (fn) => set({ _editorGetValue: fn }),
+
+  initSecretsState: async () => {
+    let secureAvailable = false
+    try {
+      secureAvailable = await window.api.isSecureStorageAvailable()
+    } catch {
+      secureAvailable = false
+    }
+    let hasSavedKey = false
+    if (secureAvailable) {
+      try {
+        hasSavedKey = await window.api.hasApiKeySecure()
+      } catch {
+        hasSavedKey = false
+      }
+    }
+    set({ isSecureStorageAvailable: secureAvailable, hasSavedApiKey: hasSavedKey, apiKey: '' })
+  },
+
+  saveApiKeySecure: async (key) => {
+    const trimmed = key.trim()
+    const available = get().isSecureStorageAvailable
+    if (!available) {
+      set({ apiKey: '', hasSavedApiKey: Boolean(trimmed) })
+      return
+    }
+    await window.api.setApiKeySecure(trimmed)
+    set({ apiKey: '', hasSavedApiKey: true })
+  },
 
   updateEditorDirtyState: (filePath, value) => {
     const saved = get().savedContentByPath[filePath]
