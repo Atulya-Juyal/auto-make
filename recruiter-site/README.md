@@ -1,18 +1,24 @@
-# Recruiter Site (Vercel Ready)
+# AutoMake Project Site (Vercel Ready)
 
-This folder contains a standalone portfolio landing page you can deploy to Vercel.
+This folder contains a standalone website focused only on the **AutoMake project**.
 
-## 1) Customize your details
+The page is designed for recruiter sharing and links directly to:
 
-Open `script.js` and update:
+- source code repository
+- issues/roadmap
+- README/docs
+- releases
 
-- `name`
-- `githubUrl`
-- `linkedinUrl`
-- `resumeUrl`
-- `email`
-- `skills`
-- `featuredProjects`
+## 1) Update repository links
+
+Open `script.js` and set these values correctly:
+
+- `repoUrl`
+- `issuesUrl`
+- `readmeUrl`
+- `releasesUrl`
+- `featureCount`, `packageCount`, `processCount`
+- `stack`, `highlights`
 
 ## 2) Local preview
 
@@ -47,5 +53,5 @@ vercel
 
 - `index.html` - page structure
 - `styles.css` - visual design
-- `script.js` - profile data + rendering
+- `script.js` - AutoMake project content + rendering
 - `vercel.json` - simple Vercel static config

@@ -1,50 +1,44 @@
-const profile = {
-  name: 'Your Name',
-  githubUrl: 'https://github.com/Atulya-Juyal',
-  linkedinUrl: 'https://www.linkedin.com/in/atulya-juyal-86a1a528a/',
-  resumeUrl: 'https://your-resume-link.com',
-  email: 'your.email@example.com',
-  yearsExp: '2+',
-  projectsCount: '12+',
-  techCount: '20+',
-  skills: [
-    'TypeScript',
-    'JavaScript',
-    'React',
-    'Node.js',
+const project = {
+  title: 'AutoMake',
+  repoUrl: 'https://github.com/Atulya-Juyal/auto-make',
+  issuesUrl: 'https://github.com/Atulya-Juyal/auto-make/issues',
+  readmeUrl: 'https://github.com/Atulya-Juyal/auto-make#readme',
+  releasesUrl: 'https://github.com/Atulya-Juyal/auto-make/releases',
+  featureCount: '10+',
+  packageCount: '25+',
+  processCount: '3',
+  stack: [
     'Electron',
-    'Python',
-    'MongoDB',
-    'PostgreSQL',
-    'REST APIs',
-    'GitHub Actions',
-    'Docker',
-    'System Design'
+    'React',
+    'TypeScript',
+    'Zustand',
+    'Monaco Editor',
+    'xterm.js',
+    'node-pty',
+    'LangGraph',
+    'LangChain',
+    'Google Gemini',
+    'OpenAI',
+    'electron-builder'
   ],
-  featuredProjects: [
+  highlights: [
     {
-      title: 'AutoMake Desktop IDE',
+      title: 'Secure Key Management',
       summary:
-        'Electron IDE with secure API key storage, Monaco editor, integrated terminal, and real-time AI chat streaming.',
-      repo: 'https://github.com/your-username/automake',
-      demo: '',
-      tags: ['Electron', 'React', 'TypeScript', 'LangGraph']
+        'Uses Electron safeStorage in main process to encrypt/decrypt API keys. Keys are never committed to repository files.',
+      tags: ['safeStorage', 'Security', 'Electron Main']
     },
     {
-      title: 'Project Two',
+      title: 'Real-Time AI Streaming',
       summary:
-        'Describe your strongest backend/full-stack project here with impact metrics and technical depth.',
-      repo: 'https://github.com/your-username/project-two',
-      demo: '',
-      tags: ['Node.js', 'Express', 'MongoDB']
+        'LangGraph orchestration with IPC streaming sends chunked responses into the sidebar with robust end/error events.',
+      tags: ['LangGraph', 'Streaming', 'IPC']
     },
     {
-      title: 'Project Three',
+      title: 'Professional IDE UX',
       summary:
-        'Describe another recruiter-relevant project (scalability, UX polish, deployment, performance, testing).',
-      repo: 'https://github.com/your-username/project-three',
-      demo: '',
-      tags: ['React', 'API', 'Testing']
+        'Three-pane resizable layout, recursive explorer tree, Monaco tabs with dirty tracking, and integrated terminal sessions.',
+      tags: ['Monaco', 'xterm', 'Resizable Panels']
     }
   ]
 }
@@ -59,46 +53,39 @@ function setHref(id, href) {
   el.href = href
 }
 
-function buildProjectCard(project) {
+function buildProjectCard(item) {
   const wrapper = document.createElement('article')
   wrapper.className = 'card'
 
-  const tags = project.tags.map((tag) => `<span class="pill">${tag}</span>`).join('')
-  const demoLink = project.demo
-    ? `<a class="pill" href="${project.demo}" target="_blank" rel="noreferrer">Live Demo</a>`
-    : ''
+  const tags = item.tags.map((tag) => `<span class="pill">${tag}</span>`).join('')
 
   wrapper.innerHTML = `
-    <h3>${project.title}</h3>
-    <p>${project.summary}</p>
+    <h3>${item.title}</h3>
+    <p>${item.summary}</p>
     <div>${tags}</div>
-    <div class="card-links">
-      <a class="pill" href="${project.repo}" target="_blank" rel="noreferrer">GitHub Repo</a>
-      ${demoLink}
-    </div>
   `
   return wrapper
 }
 
 function hydrate() {
   byId('footerYear').textContent = new Date().getFullYear().toString()
-  byId('footerName').textContent = profile.name
-  byId('yearsExp').textContent = profile.yearsExp
-  byId('projectsCount').textContent = profile.projectsCount
-  byId('techCount').textContent = profile.techCount
+  byId('footerName').textContent = project.title
+  byId('featureCount').textContent = project.featureCount
+  byId('packageCount').textContent = project.packageCount
+  byId('processCount').textContent = project.processCount
 
-  setHref('githubTopLink', profile.githubUrl)
-  setHref('githubMainLink', profile.githubUrl)
-  setHref('githubProjectsLink', profile.githubUrl)
-  setHref('resumeLink', profile.resumeUrl)
-  setHref('linkedinLink', profile.linkedinUrl)
-  setHref('emailLink', `mailto:${profile.email}`)
+  setHref('githubTopLink', project.repoUrl)
+  setHref('githubMainLink', project.repoUrl)
+  setHref('githubCodeLink', project.repoUrl)
+  setHref('issuesLink', project.issuesUrl)
+  setHref('readmeLink', project.readmeUrl)
+  setHref('releasesLink', project.releasesUrl)
 
   const projectsGrid = byId('projectsGrid')
-  profile.featuredProjects.forEach((p) => projectsGrid.appendChild(buildProjectCard(p)))
+  project.highlights.forEach((p) => projectsGrid.appendChild(buildProjectCard(p)))
 
   const skillsWrap = byId('skillsWrap')
-  profile.skills.forEach((skill) => {
+  project.stack.forEach((skill) => {
     const chip = document.createElement('span')
     chip.className = 'chip'
     chip.textContent = skill

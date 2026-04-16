@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Your Name | Software Developer</title>
+    <title>AutoMake | Desktop AI IDE</title>
     <meta
       name="description"
-      content="Portfolio landing page for recruiters. Explore projects, skills, and GitHub work."
+      content="AutoMake project showcase page for recruiters. Explore architecture, features, and source code."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,11 +19,11 @@
   <body>
     <header class="topbar">
       <div class="container nav">
-        <a class="brand" href="#home">YourName<span class="dot">.</span></a>
+        <a class="brand" href="#home">AutoMake<span class="dot">.</span></a>
         <nav class="links">
-          <a href="#projects">Projects</a>
-          <a href="#skills">Skills</a>
-          <a href="#contact">Contact</a>
+          <a href="#highlights">Highlights</a>
+          <a href="#stack">Stack</a>
+          <a href="#architecture">Architecture</a>
         </nav>
         <a id="githubTopLink" class="btn btn-primary" href="#" target="_blank" rel="noreferrer"
           >GitHub</a
@@ -33,55 +33,56 @@
 
     <main id="home">
       <section class="hero container">
-        <p class="eyebrow">OPEN TO SOFTWARE ENGINEERING ROLES</p>
+        <p class="eyebrow">PROJECT SHOWCASE</p>
         <h1>
-          I build fast, reliable products
-          <span class="accent">with clean engineering</span>.
+          AutoMake:
+          <span class="accent">AI-powered desktop coding workspace</span>
         </h1>
         <p class="subtitle">
-          Full-stack developer focused on product quality, maintainable architecture, and shipping.
-          Review my work, code quality, and project outcomes below.
+          A production-style Electron IDE with secure API key storage, Monaco editing, integrated terminal,
+          resizable three-pane layout, and real-time streaming AI assistant.
         </p>
         <div class="hero-actions">
           <a id="githubMainLink" class="btn btn-primary" href="#" target="_blank" rel="noreferrer"
-            >View GitHub Profile</a
+            >View Source Code</a
           >
-          <a id="resumeLink" class="btn btn-ghost" href="#" target="_blank" rel="noreferrer"
-            >View Resume</a
+          <a id="issuesLink" class="btn btn-ghost" href="#" target="_blank" rel="noreferrer"
+            >Open Issues / Roadmap</a
           >
         </div>
         <div class="stats">
-          <article><strong id="yearsExp">2+</strong><span>Years Building</span></article>
-          <article><strong id="projectsCount">12+</strong><span>Projects</span></article>
-          <article><strong id="techCount">20+</strong><span>Technologies</span></article>
+          <article><strong id="featureCount">10+</strong><span>Major Features</span></article>
+          <article><strong id="packageCount">25+</strong><span>Core Packages</span></article>
+          <article><strong id="processCount">3</strong><span>Electron Layers</span></article>
         </div>
       </section>
 
-      <section id="projects" class="container section">
+      <section id="highlights" class="container section">
         <div class="section-head">
-          <h2>Featured Projects</h2>
-          <a id="githubProjectsLink" href="#" target="_blank" rel="noreferrer">See all repositories</a>
+          <h2>Project Highlights</h2>
+          <a id="githubCodeLink" href="#" target="_blank" rel="noreferrer">Browse repository</a>
         </div>
         <div id="projectsGrid" class="grid"></div>
       </section>
 
-      <section id="skills" class="container section">
+      <section id="stack" class="container section">
         <div class="section-head">
-          <h2>Core Skills</h2>
+          <h2>Technology Stack</h2>
         </div>
         <div id="skillsWrap" class="chips"></div>
       </section>
 
-      <section id="contact" class="container section contact">
-        <h2>Let’s Talk</h2>
+      <section id="architecture" class="container section contact">
+        <h2>Architecture Notes</h2>
         <p>
-          I am available for internships and full-time roles. If you think I could be a fit for your
-          team, I would love to connect.
+          AutoMake separates responsibilities across Electron main, preload, and renderer layers.
+          AI execution runs in the main process, secure keys use OS encryption via safeStorage, and
+          the React renderer handles UI/state orchestration.
         </p>
         <div class="hero-actions">
-          <a id="emailLink" class="btn btn-primary" href="#">Email Me</a>
-          <a id="linkedinLink" class="btn btn-ghost" href="#" target="_blank" rel="noreferrer"
-            >LinkedIn</a
+          <a id="readmeLink" class="btn btn-primary" href="#" target="_blank" rel="noreferrer">Read Full Docs</a>
+          <a id="releasesLink" class="btn btn-ghost" href="#" target="_blank" rel="noreferrer"
+            >Releases</a
           >
         </div>
       </section>
@@ -89,7 +90,7 @@
 
     <footer class="footer">
       <div class="container">
-        <span id="footerName">Your Name</span>
+        <span id="footerName">AutoMake</span>
         <span>·</span>
         <span id="footerYear"></span>
       </div>
