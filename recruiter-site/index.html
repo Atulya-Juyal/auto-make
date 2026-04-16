@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Name | Software Developer</title>
+    <meta
+      name="description"
+      content="Portfolio landing page for recruiters. Explore projects, skills, and GitHub work."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <a class="brand" href="#home">YourName<span class="dot">.</span></a>
+        <nav class="links">
+          <a href="#projects">Projects</a>
+          <a href="#skills">Skills</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <a id="githubTopLink" class="btn btn-primary" href="#" target="_blank" rel="noreferrer"
+          >GitHub</a
+        >
+      </div>
+    </header>
+
+    <main id="home">
+      <section class="hero container">
+        <p class="eyebrow">OPEN TO SOFTWARE ENGINEERING ROLES</p>
+        <h1>
+          I build fast, reliable products
+          <span class="accent">with clean engineering</span>.
+        </h1>
+        <p class="subtitle">
+          Full-stack developer focused on product quality, maintainable architecture, and shipping.
+          Review my work, code quality, and project outcomes below.
+        </p>
+        <div class="hero-actions">
+          <a id="githubMainLink" class="btn btn-primary" href="#" target="_blank" rel="noreferrer"
+            >View GitHub Profile</a
+          >
+          <a id="resumeLink" class="btn btn-ghost" href="#" target="_blank" rel="noreferrer"
+            >View Resume</a
+          >
+        </div>
+        <div class="stats">
+          <article><strong id="yearsExp">2+</strong><span>Years Building</span></article>
+          <article><strong id="projectsCount">12+</strong><span>Projects</span></article>
+          <article><strong id="techCount">20+</strong><span>Technologies</span></article>
+        </div>
+      </section>
+
+      <section id="projects" class="container section">
+        <div class="section-head">
+          <h2>Featured Projects</h2>
+          <a id="githubProjectsLink" href="#" target="_blank" rel="noreferrer">See all repositories</a>
+        </div>
+        <div id="projectsGrid" class="grid"></div>
+      </section>
+
+      <section id="skills" class="container section">
+        <div class="section-head">
+          <h2>Core Skills</h2>
+        </div>
+        <div id="skillsWrap" class="chips"></div>
+      </section>
+
+      <section id="contact" class="container section contact">
+        <h2>Let’s Talk</h2>
+        <p>
+          I am available for internships and full-time roles. If you think I could be a fit for your
+          team, I would love to connect.
+        </p>
+        <div class="hero-actions">
+          <a id="emailLink" class="btn btn-primary" href="#">Email Me</a>
+          <a id="linkedinLink" class="btn btn-ghost" href="#" target="_blank" rel="noreferrer"
+            >LinkedIn</a
+          >
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span id="footerName">Your Name</span>
+        <span>·</span>
+        <span id="footerYear"></span>
+      </div>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
